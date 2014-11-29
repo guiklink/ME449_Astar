@@ -58,7 +58,9 @@ class TheGrid:
 					# Set that location to zero
 					self.grid[row][column] = 1
 					print("Click ", pos, "Grid coordinates: ", row, column)
-					
+				elif event.type == pygame.KEYDOWN:
+					if event.key == pygame.K_SPACE:
+						print 'HERE'
 
 			# Set the screen background
 			screen.fill(BLACK)
