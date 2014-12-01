@@ -16,6 +16,8 @@ BLUE = (0, 0, 255)
 class TheGrid:
 	def __init__(self, nWidth, nHeight):
 		self.output = None
+		self.costMatrix = None
+
 		self.nWidth = nWidth
 		self.nHeight = nHeight
 
@@ -105,14 +107,25 @@ class TheGrid:
 
 		return list
 
+	def PastCostInit(self):
+		dict = {}
+		for row in range(self.nHeight):
+			for column in range(self.nWidth):
+				dict.update({str([row, column]):None})
+		return dict
+
 	def A_Star(self, graph):
 		print 'Using A* ...'
 
 		costGraph = graph.CreateGraph()
 
-		open = [self.startPos]				# This is a sorted list (cost) of the open positions
-		past_cost = {str(self.startPos):0}	# This is a dict that has the cost to all nodes openned
-		closed = []							# All the nodes that were already expanded (avoid infinite loops)
+		self.costMatrix = costGraph
+
+		open = [self.startPos]						# This is a sorted list (cost) of the open positions
+		
+		past_cost = self.PastCostInit()
+		past_cost.update({str(self.startPos):0})	# This is a dict that has the cost to all nodes openned
+		closed = []									# All the nodes that were already expanded (avoid infinite loops)
 		parentDict = {str(self.startPos):None}
 
 		while len(open) > 0:		
@@ -138,8 +151,6 @@ class TheGrid:
 				nbrDictHeuristic = {}
 				for nbr in neighbors:
 					if nbr not in closed:	# for all nbr that werent annalyzed
-						if nbr not in open:
-							parentDict.update({str(nbr):current})
 
 						self.WriteOnGrid([nbr], 4) # mark the explored nodes in the grid
 						self.WriteOnGrid([current], 5) # mark the explored nodes in the grid
@@ -149,8 +160,13 @@ class TheGrid:
 						tmp_cost_heur = tmp_cost + costGraph[graph.RetrieveNode(self.goalPos)][graph.RetrieveNode(nbr)]
 						#(RetrieveNode transform a [i,j] based coordinate to its node number so we can retrieve the cost from the Graph)
 				
-						nbrDict.update({str(nbr):tmp_cost})							# add the cost to go to each nbr to the temp dict
+						#nbrDict.update({str(nbr):tmp_cost})							# add the cost to go to each nbr to the temp dict
 						nbrDictHeuristic.update({str(nbr):tmp_cost_heur})
+
+					if  (past_cost[str(nbr)] == None) or (tmp_cost < past_cost[str(nbr)]):
+							past_cost.update({str(nbr):tmp_cost})
+							parentDict.update({str(nbr):current})
+
 				nbrCostSortedList = sorted(nbrDictHeuristic,key=nbrDictHeuristic.__getitem__)			
 				# get a list with nbr nodes sorted according its cost 
 				nbrCostSortedList = map(library.listFromStrList, nbrCostSortedList) # convert the elements of the list from a string '[i,j]' to a list [i,j] format
@@ -162,7 +178,7 @@ class TheGrid:
 				print '---------------------------------------------------------------------------'
 
 			self.DrawGrid()
-			time.sleep(0.5)
+			time.sleep(0.2)
 
 
 
