@@ -11,10 +11,11 @@ GREEN = (0, 255, 0)
 RED = (255, 0, 0)
 LIGHTRED = (255, 200, 200)
 ORANGE = (255, 128, 0)
+BLUE = (0, 0, 255)
 
 class TheGrid:
 	def __init__(self, nWidth, nHeight):
-
+		self.output = None
 		self.nWidth = nWidth
 		self.nHeight = nHeight
 
@@ -48,6 +49,20 @@ class TheGrid:
 		for pos in list:
 			self.grid[pos[0]][pos[1]] = value
 
+	def WritePath(self, parents):
+		print '\n\nPARENTS = ',parents
+		pathNode = self.goalPos
+		path = [pathNode]
+
+		while pathNode != self.startPos:
+			pathNode = parents[str(pathNode)]
+			path.append(pathNode)
+		self.WriteOnGrid(path, 2)
+		path.reverse()
+		self.output = parents
+		print '\n\nPATH TO GOAL = ', path
+
+
 	def DrawGrid(self):
 		# Set the screen background
 		self.screen.fill(BLACK)
@@ -64,6 +79,8 @@ class TheGrid:
 					color = ORANGE
 				elif self.grid[row][column] == 4: # Explored Tiles
 					color = LIGHTRED
+				elif self.grid[row][column] == 5: # Current tile
+					color = BLUE
 				pygame.draw.rect(self.screen, color, [(self.margin+self.width)*column+self.margin, (self.margin+self.height)*row+
 					self.margin, self.width, self.height])
 		# Limit to 60 frames per second
@@ -96,6 +113,7 @@ class TheGrid:
 		open = [self.startPos]				# This is a sorted list (cost) of the open positions
 		past_cost = {str(self.startPos):0}	# This is a dict that has the cost to all nodes openned
 		closed = []							# All the nodes that were already expanded (avoid infinite loops)
+		parentDict = {str(self.startPos):None}
 
 		while len(open) > 0:		
 			current = open.pop(0)	# retrieve the first node from the open list (smallest cost so far)
@@ -103,12 +121,10 @@ class TheGrid:
 
 			if current == self.goalPos:	# is the current node is the goal finish algorithm
 				print 'PATH FOUND !!!!'
-				open = []
-				self.WriteOnGrid(closed, 2)
+				open = []				# make open empty to finish the loop
+				self.WritePath(parentDict)
 			else:
 				neighbors = self.neighborLocations(current) # retrieve all the neighbo coords for the current position
-
-				
 
 				print '\nITERATION'
 				print 'START = ', self.startPos
@@ -122,7 +138,12 @@ class TheGrid:
 				nbrDictHeuristic = {}
 				for nbr in neighbors:
 					if nbr not in closed:	# for all nbr that werent annalyzed
+						if nbr not in open:
+							parentDict.update({str(nbr):current})
+
 						self.WriteOnGrid([nbr], 4) # mark the explored nodes in the grid
+						self.WriteOnGrid([current], 5) # mark the explored nodes in the grid
+
 						tmp_cost = past_cost[str(current)] + costGraph[graph.RetrieveNode(current)][graph.RetrieveNode(nbr)] 
 						# retrieve the cost spent to the current node and add it to the cost to go to the respective nbr 
 						tmp_cost_heur = tmp_cost + costGraph[graph.RetrieveNode(self.goalPos)][graph.RetrieveNode(nbr)]
@@ -141,7 +162,7 @@ class TheGrid:
 				print '---------------------------------------------------------------------------'
 
 			self.DrawGrid()
-			time.sleep(1)
+			time.sleep(0.5)
 
 
 
@@ -174,9 +195,9 @@ class TheGrid:
 					self.grid[row][column] = self.clickCount
 					if self.clickCount <= 2:
 						if self.clickCount == 1:
-							self.startPos = [row, column]
+							self.startPos = [row,column]
 						elif self.clickCount == 2:
-							self.goalPos = [row, column]
+							self.goalPos = [row,column]
 						self.clickCount += 1
 					print("Click ", pos, "Grid coordinates: ", row, column)
 				elif event.type == pygame.KEYDOWN:
