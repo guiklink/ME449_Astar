@@ -1,12 +1,16 @@
 #!/usr/bin/env python
 
 import pygame
+import library
+import time
 
 # Define some colors
-BLACK = ( 0, 0, 0)
-WHITE = ( 255, 255, 255)
-GREEN = ( 0, 255, 0)
-RED = ( 255, 0, 0)
+BLACK = (0, 0, 0)
+WHITE = (255, 255, 255)
+GREEN = (0, 255, 0)
+RED = (255, 0, 0)
+LIGHTRED = (255, 200, 200)
+ORANGE = (255, 128, 0)
 
 class TheGrid:
 	def __init__(self, nWidth, nHeight):
@@ -32,18 +36,129 @@ class TheGrid:
 		# Set title of screen
 		pygame.display.set_caption("A* Grid")
 
+		self.screen = None
+		# Used to manage how fast the screen updates
+		self.clock = None
+
+		self.clickCount = 1 	# 1 = set START | 2 = set GOAL | 3 = set OBSTACLES
+		self.startPos = None
+		self.goalPos = None
+
+	def WriteOnGrid(self, list, value):
+		for pos in list:
+			self.grid[pos[0]][pos[1]] = value
+
+	def DrawGrid(self):
+		# Set the screen background
+		self.screen.fill(BLACK)
+
+		# Draw the grid
+		for row in range(self.nHeight):
+			for column in range(self.nWidth):
+				color = WHITE
+				if self.grid[row][column] == 1: # Empty tiles 
+					color = GREEN
+				elif self.grid[row][column] == 2: # Goal 
+					color = RED
+				elif self.grid[row][column] == 3: # Obstacles
+					color = ORANGE
+				elif self.grid[row][column] == 4: # Explored Tiles
+					color = LIGHTRED
+				pygame.draw.rect(self.screen, color, [(self.margin+self.width)*column+self.margin, (self.margin+self.height)*row+
+					self.margin, self.width, self.height])
+		# Limit to 60 frames per second
+		self.clock.tick(60)
+		# Go ahead and update the screen with what we've drawn.
+		pygame.display.flip()
+
+	def neighborLocations(self, coord):	
+		row = coord[0]
+		column = coord[1]
+		list = []
+
+		columnMin = max([column - 1, 0])					# the value o (X,Y) for neighbors should be a loop going from (X-1,Y-1) to (X+1,Y+1) 
+		columnMax = min([column + 1, self.nWidth - 1])	# the functions MIN and MAX make sure these values wont be less than 0 or more than
+		rowMin = max([row - 1, 0])					# the maximum size of our grid
+		rowMax = min([row + 1, self.nHeight-1])
+
+		for i in range(columnMin,columnMax + 1):
+			for j in range(rowMin, rowMax + 1):
+				if(i != column or j != row) and (self.grid[j][i] != 3):
+					list.append([j,i])
+
+		return list
+
+	def A_Star(self, graph):
+		print 'Using A* ...'
+
+		costGraph = graph.CreateGraph()
+
+		open = [self.startPos]				# This is a sorted list (cost) of the open positions
+		past_cost = {str(self.startPos):0}	# This is a dict that has the cost to all nodes openned
+		closed = []							# All the nodes that were already expanded (avoid infinite loops)
+
+		while len(open) > 0:		
+			current = open.pop(0)	# retrieve the first node from the open list (smallest cost so far)
+			closed.append(current)	# add to closed list
+
+			if current == self.goalPos:	# is the current node is the goal finish algorithm
+				print 'PATH FOUND !!!!'
+				open = []
+				self.WriteOnGrid(closed, 2)
+			else:
+				neighbors = self.neighborLocations(current) # retrieve all the neighbo coords for the current position
+
+				
+
+				print '\nITERATION'
+				print 'START = ', self.startPos
+				print 'GOAL = ', self.goalPos
+				print 'CURRENT = ', current
+				print 'NEIGHBORS = ',neighbors
+				print 'OPEN = ',open
+				print 'CLOSED = ',closed
+
+				nbrDict = {}	# init a tmp dict
+				nbrDictHeuristic = {}
+				for nbr in neighbors:
+					if nbr not in closed:	# for all nbr that werent annalyzed
+						self.WriteOnGrid([nbr], 4) # mark the explored nodes in the grid
+						tmp_cost = past_cost[str(current)] + costGraph[graph.RetrieveNode(current)][graph.RetrieveNode(nbr)] 
+						# retrieve the cost spent to the current node and add it to the cost to go to the respective nbr 
+						tmp_cost_heur = tmp_cost + costGraph[graph.RetrieveNode(self.goalPos)][graph.RetrieveNode(nbr)]
+						#(RetrieveNode transform a [i,j] based coordinate to its node number so we can retrieve the cost from the Graph)
+				
+						nbrDict.update({str(nbr):tmp_cost})							# add the cost to go to each nbr to the temp dict
+						nbrDictHeuristic.update({str(nbr):tmp_cost_heur})
+				nbrCostSortedList = sorted(nbrDictHeuristic,key=nbrDictHeuristic.__getitem__)			
+				# get a list with nbr nodes sorted according its cost 
+				nbrCostSortedList = map(library.listFromStrList, nbrCostSortedList) # convert the elements of the list from a string '[i,j]' to a list [i,j] format
+				print nbrDict
+				print nbrCostSortedList
+				past_cost.update(nbrDict)		# add the tmp dict to our main dict
+				open = nbrCostSortedList + open	# add a list of sorted nbr according to the travel cost to open
+				print 'NEW OPEN = ', open
+				print '---------------------------------------------------------------------------'
+
+			self.DrawGrid()
+			time.sleep(1)
+
+
+
+	def PlanToGoal(self):
+		print 'Planning to goal ...'
+		theGraph = library.Graph(self.nHeight, self.nWidth)
+		self.A_Star(theGraph)
+
 
 	def Start(self):
 
-		screen = pygame.display.set_mode(self.size)
+		self.screen = pygame.display.set_mode(self.size)
 
 		#Loop until the user clicks the close button.
 		done = False
 
-		# Used to manage how fast the screen updates
-		clock = None
-
-		clock = pygame.time.Clock()
+		self.clock = pygame.time.Clock()
 		# -------- Main Program Loop -----------
 		while done == False:
 			for event in pygame.event.get(): # User did something
@@ -56,31 +171,25 @@ class TheGrid:
 					column = pos[0] // (self.width + self.margin)
 					row = pos[1] // (self.height + self.margin)
 					# Set that location to zero
-					self.grid[row][column] = 1
+					self.grid[row][column] = self.clickCount
+					if self.clickCount <= 2:
+						if self.clickCount == 1:
+							self.startPos = [row, column]
+						elif self.clickCount == 2:
+							self.goalPos = [row, column]
+						self.clickCount += 1
 					print("Click ", pos, "Grid coordinates: ", row, column)
 				elif event.type == pygame.KEYDOWN:
 					if event.key == pygame.K_SPACE:
-						print 'HERE'
+						print 'START'
+						self.PlanToGoal()
 
-			# Set the screen background
-			screen.fill(BLACK)
-
-			# Draw the grid
-			for row in range(self.nHeight):
-				for column in range(self.nWidth):
-					color = WHITE
-					if self.grid[row][column] == 1:
-						color = GREEN
-					pygame.draw.rect(screen, color, [(self.margin+self.width)*column+self.margin, (self.margin+self.height)*row+
-						self.margin, self.width, self.height])
-			# Limit to 60 frames per second
-			clock.tick(60)
-			# Go ahead and update the screen with what we've drawn.
-			pygame.display.flip()
+			self.DrawGrid()
+			
 		# Be IDLE friendly. If you forget this line, the program will 'hang'
 		# on exit.
 		pygame.quit()
 
 
 if __name__ == '__main__':
-	theGrid = TheGrid(100,100)
+	theGrid = TheGrid(10,10)

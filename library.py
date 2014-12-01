@@ -3,16 +3,34 @@
 import numpy as np
 import math
 
+def listFromStrList(str):
+	l = list(str)
+	l = filter(lambda a: a != ' ', l)
+	return [int(l[1]),int(l[3])]
+
+def MatrixOfNodes(rows,columns):
+	array2D = []
+
+	counterInit = 0
+	counterFinal = columns
+	for i in range(rows):
+		array2D.append(range(counterInit,counterFinal))
+		counterInit += columns
+		counterFinal += columns
+	return array2D
 
 class Graph:
-	def __init__(self, map):
-		self.map = map
-		self.dim = map.size
-		self.dimX = map[0].size
-		self.dimY = map.size/map[0].size
+	def __init__(self, rows, columns):
+		self.map = MatrixOfNodes(rows, columns)
+		self.dim = rows * columns
+		self.dimX = columns
+		self.dimY = rows
 
 	def RetrieveCoord(self,node):
 		return node / self.dimY, node % self.dimX
+
+	def RetrieveNode(self, coord):
+		return self.map[coord[0]][coord[1]]
 
 	def DistanceList(self,node):
 		dList = []
@@ -26,14 +44,13 @@ class Graph:
 		return dList
 
 	def CreateGraph(self):
-		dim = self.map.size
 		graph = []
-		for i in range(0,dim):
+		for i in range(0,self.dim):
 			graph.append(self.DistanceList(i))
-		return np.reshape(graph,[dim,dim])
+		return graph
 
 
-if __name__ == '__main__':
-	testArray = range(0,9)
-	matrixTest = np.reshape(testArray,[3,3])
-	graphTest = Graph(matrixTest)
+class Node:
+	def __init__(self, node, parent):
+		self.node = node
+		self.parent = parent
