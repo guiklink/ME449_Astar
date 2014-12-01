@@ -6,7 +6,15 @@ import math
 def listFromStrList(str):
 	l = list(str)
 	l = filter(lambda a: a != ' ', l)
-	return [int(l[1]),int(l[3])]
+	l = filter(lambda a: a != '[', l)
+	l = filter(lambda a: a != ']', l)
+
+	strl = ''.join(l)
+	res = strl.split(',')
+
+	coord = [int(res[0]),int(res[1])]
+
+	return coord
 
 def MatrixOfNodes(rows,columns):
 	array2D = []

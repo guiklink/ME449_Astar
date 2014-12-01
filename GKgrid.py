@@ -117,7 +117,9 @@ class TheGrid:
 	def A_Star(self, graph):
 		print 'Using A* ...'
 
+		print '\nCreating Cost Graph...'
 		costGraph = graph.CreateGraph()
+		print '\nCost Graph created!'
 
 		self.costMatrix = costGraph
 
@@ -229,4 +231,4 @@ class TheGrid:
 
 
 if __name__ == '__main__':
-	theGrid = TheGrid(10,10)
+	theGrid = TheGrid(100,100)
