@@ -4,7 +4,7 @@ import pygame
 import library
 import time
 
-# Define some colors
+# Define some colors for the tiles
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 GREEN = (0, 255, 0)
@@ -13,69 +13,71 @@ LIGHTRED = (255, 200, 200)
 ORANGE = (255, 128, 0)
 BLUE = (0, 0, 255)
 
-class TheGrid:
-	def __init__(self, nWidth, nHeight):
-		self.outputParents = None
+class TheGrid:	#This class hols the main skeleton of the program, it will create the pygame grid and call all the necessary functions
+	def __init__(self, nWidth, nHeight): 	# define the dimensions of your grid
+		self.outputParents = None			#this variable is used for debugging
 
-		self.nWidth = nWidth
+		self.nWidth = nWidth	
 		self.nHeight = nHeight
 
-		self.width = 600 / nWidth
-		self.height = 600 / nHeight
-		self.margin = 1
-		self.grid = []
+		self.width = 600 / nWidth	# Calculate the dimension ratio to make possible that NxN tiles can be displayted in a
+		self.height = 600 / nHeight # 600x600 px screen
+		self.margin = 1 			# Set the margins size
+		self.grid = []				# 2D-List that hold the grids
 
-		for row in range(nWidth):
+		for row in range(nWidth):	# Loops to initializa the tiles list
 			# Add an empty array that will hold each cell
 			# in this row
 			self.grid.append([])
 			for column in range(nHeight):
 				self.grid[row].append(0) # Append a cell
 
-		pygame.init()
+		pygame.init()				# init pygame library variables
 
-		self.size = [600 + nWidth,600 + nHeight]
+		self.size = [600 + nWidth,600 + nHeight] # screen size for the drawing funtion
 		# Set title of screen
-		pygame.display.set_caption("A* Grid")
+		pygame.display.set_caption("A* Grid")	# Screen name
 
 		self.screen = None
 		# Used to manage how fast the screen updates
 		self.clock = None
 
 		self.clickCount = 1 	# 1 = set START | 2 = set GOAL | 3 = set OBSTACLES
-		self.startPos = None
+		self.startPos = None	
 		self.goalPos = None
 
 
-		self.theGraph = library.Graph(self.nHeight, self.nWidth)
+		self.theGraph = library.Graph(self.nHeight, self.nWidth)	# Initialize the graph library that handle euclidean cost graphs
 		print '\nCreating Cost Graph...'
-		self.theGraph.CreateGraph()
+		self.theGraph.CreateGraph()									# Initialize the enclidean cost graph 
 		print '\nCost Graph created!'
 
-	def WriteOnGrid(self, list, value):
+	def WriteOnGrid(self, list, value):				# Function that receive a list of [i,j] positions and write a value on it
 		for pos in list:
 			self.grid[pos[0]][pos[1]] = value
 
-	def WritePath(self, parents):
+	def WritePath(self, parents):					# Function that receive a dict of nodes and its parents and draw sets the values in the grid for final path
 		print '\n\nPARENTS = ',parents
 		pathNode = self.goalPos
 		path = [pathNode]
 
-		while pathNode != self.startPos:
-			pathNode = parents[str(pathNode)]
+		while pathNode != self.startPos:		# While not in the START position keep looking for the parent 
+			pathNode = parents[str(pathNode)]	# Build the path list in a reverse way
 			path.append(pathNode)
 		self.WriteOnGrid(path, 2)
-		path.reverse()
+		path.reverse()							# Unreverse the list in order to print it in the right order
 		self.outputParents = parents
-		print '\n\nPATH TO GOAL = ', path
+		print '\n\n---------------------- PATH TO GOAL -------------------------------------------------'
+		print '\n', path
+		print '\n-------------------------------------------------------------------------------------'
 
 
-	def DrawGrid(self):
+	def DrawGrid(self):	#Function that draw the grid, is called everytime the grid is refreshed or updated
 		# Set the screen background
 		self.screen.fill(BLACK)
 
 		# Draw the grid
-		for row in range(self.nHeight):
+		for row in range(self.nHeight):			# Depending on the value on the grid fill it with the appropriate color
 			for column in range(self.nWidth):
 				color = WHITE
 				if self.grid[row][column] == 1: # Empty tiles 
@@ -95,21 +97,20 @@ class TheGrid:
 		# Go ahead and update the screen with what we've drawn.
 		pygame.display.flip()
 
-	def neighborLocations(self, coord):	
+	def neighborLocations(self, coord):	# Function to retrieve the neighbors of a position
 		row = coord[0]
 		column = coord[1]
 		list = []
 
-		columnMin = max([column - 1, 0])					# the value o (X,Y) for neighbors should be a loop going from (X-1,Y-1) to (X+1,Y+1) 
+		columnMin = max([column - 1, 0])				# the value o (X,Y) for neighbors should be a loop going from (X-1,Y-1) to (X+1,Y+1) 
 		columnMax = min([column + 1, self.nWidth - 1])	# the functions MIN and MAX make sure these values wont be less than 0 or more than
-		rowMin = max([row - 1, 0])					# the maximum size of our grid
+		rowMin = max([row - 1, 0])						# the maximum size of our grid
 		rowMax = min([row + 1, self.nHeight-1])
 
 		for i in range(columnMin,columnMax + 1):
 			for j in range(rowMin, rowMax + 1):
 				if(i != column or j != row) and (self.grid[j][i] != 3):
 					list.append([j,i])
-
 		return list
 
 	def PastCostInit(self):
@@ -143,7 +144,7 @@ class TheGrid:
 			else:
 				neighbors = self.neighborLocations(current) # retrieve all the neighbo coords for the current position
 
-				print '\nITERATION'
+				print '\nITERATION'					# This prints are used for debugging
 				print 'START = ', self.startPos
 				print 'GOAL = ', self.goalPos
 				print 'CURRENT = ', current
@@ -167,31 +168,31 @@ class TheGrid:
 						#nbrDict.update({str(nbr):tmp_cost})							# add the cost to go to each nbr to the temp dict
 						nbrDictHeuristic.update({str(nbr):tmp_cost_heur})
 
-					if  (past_cost[str(nbr)] == None) or (tmp_cost < past_cost[str(nbr)]):
-							past_cost.update({str(nbr):tmp_cost})
-							parentDict.update({str(nbr):current})
+					if  (past_cost[str(nbr)] == None) or (tmp_cost < past_cost[str(nbr)]): # Check if we already know the cost for this NBR or if we got a better cost then before 
+							past_cost.update({str(nbr):tmp_cost})		# Update the cost to this NBR
+							parentDict.update({str(nbr):current})		# The CURRENT will be the new parent for NBR
 
-				nbrCostSortedList = sorted(nbrDictHeuristic,key=nbrDictHeuristic.__getitem__)			
+				nbrCostSortedList = sorted(nbrDictHeuristic,key=nbrDictHeuristic.__getitem__)	# Sort the expanded NBRs by its cost to goal (past cost + heuristic)		
 				# get a list with nbr nodes sorted according its cost 
 				nbrCostSortedList = map(library.listFromStrList, nbrCostSortedList) # convert the elements of the list from a string '[i,j]' to a list [i,j] format
-				print nbrDict
+				print nbrDict   				# More debugging prints !!!!!
 				print nbrCostSortedList
 				past_cost.update(nbrDict)		# add the tmp dict to our main dict
 				open = nbrCostSortedList + open	# add a list of sorted nbr according to the travel cost to open
 				print 'NEW OPEN = ', open
 				print '---------------------------------------------------------------------------'
 
-			self.DrawGrid()
-			time.sleep(0.2)
+			self.DrawGrid()						# Redraw the grid with the new changes
+			time.sleep(0.2)						# Wait for a little bit so the user can see the changes in the grid
 
 
 
-	def PlanToGoal(self):
+	def PlanToGoal(self):						# Function to encapsulate the A* (Computer Scientist habbits never dies!)
 		print 'Planning to goal ...'
 		self.A_Star()
 
 
-	def Start(self):
+	def Start(self):							# Function to initialize the grid
 
 		self.screen = pygame.display.set_mode(self.size)
 
