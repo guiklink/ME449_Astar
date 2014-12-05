@@ -42,7 +42,7 @@ class TheGrid:	#This class hols the main skeleton of the program, it will create
 		# Used to manage how fast the screen updates
 		self.clock = None
 
-		self.clickCount = 1 	# 1 = set START | 2 = set GOAL | 3 = set OBSTACLES
+		self.clickCount = 3 	# 1 = set START | 2 = set GOAL | 3 = set OBSTACLES
 		self.startPos = None	
 		self.goalPos = None
 
@@ -51,6 +51,18 @@ class TheGrid:	#This class hols the main skeleton of the program, it will create
 		print '\nCreating Cost Graph...'
 		self.theGraph.CreateGraph()									# Initialize the enclidean cost graph 
 		print '\nCost Graph created!'
+
+	
+	def RestartTiles(self):
+		self.grid = []
+
+		for row in range(self.nWidth):	# Loops to initializa the tiles list
+			# Add an empty array that will hold each cell
+			# in this row
+			self.grid.append([])
+			for column in range(self.nHeight):
+				self.grid[row].append(0) # Append a cell
+
 
 	def WriteOnGrid(self, list, value):				# Function that receive a list of [i,j] positions and write a value on it
 		for pos in list:
@@ -141,6 +153,7 @@ class TheGrid:	#This class hols the main skeleton of the program, it will create
 				print 'PATH FOUND !!!!'
 				open = []				# make open empty to finish the loop
 				self.WritePath(parentDict)
+				return parentDict
 			else:
 				neighbors = self.neighborLocations(current) # retrieve all the neighbo coords for the current position
 
@@ -185,11 +198,48 @@ class TheGrid:	#This class hols the main skeleton of the program, it will create
 			self.DrawGrid()						# Redraw the grid with the new changes
 			time.sleep(0.2)						# Wait for a little bit so the user can see the changes in the grid
 
+		return {}
 
+	def IsPathStraighLine(self, parents):
+		x1 = self.startPos[1]
+		y1 = self.startPos[0]
+		x2 = self.goalPos[1]
+		y2 = self.goalPos[0]
+
+		print 'x1 = ',x1
+		print 'y1 = ',y1
+		print 'x2 = ',x2
+		print 'y2 = ',y2
+
+		m = (y2 - y1) / (x2 - x1)
+
+		print '\nLine Equation: y - ',y1,' = ', m, ' * (x - ', x1,')'
+
+		pathNode = self.goalPos
+
+		while pathNode != self.startPos:		# While not in the START position keep looking for the parent 
+			if pathNode[0]-y1!=m*(pathNode[1]-x1):
+				return False
+			pathNode = parents[str(pathNode)]
+		return True	
+			
 
 	def PlanToGoal(self):						# Function to encapsulate the A* (Computer Scientist habbits never dies!)
 		print 'Planning to goal ...'
-		self.A_Star()
+		result = self.A_Star()
+		if len(result) == 0:
+			print '\n\nThere is no path for this goal!!!'
+		else:
+			if self.IsPathStraighLine(result):
+				print '\nIt is a line!'
+			else:
+				print '\nIt is NOT a line!'
+
+
+	def DrawObstacleCircle(self, x, y, cRadius):
+		self.grid[y][x] = 3
+		nbrList = self.neighborLocations([y,x])
+		self.WriteOnGrid(nbrList,3)
 
 
 	def Start(self):							# Function to initialize the grid
@@ -224,6 +274,18 @@ class TheGrid:	#This class hols the main skeleton of the program, it will create
 					if event.key == pygame.K_SPACE:
 						print 'START'
 						self.PlanToGoal()
+					if event.key == pygame.K_s:
+						print 'Select a START position:'
+						self.clickCount = 1
+					if event.key == pygame.K_g:
+						print 'Select a GOAL position:'
+						self.clickCount = 2
+					if event.key == pygame.K_c:
+						circleRadius = int(input("Enter Radius in tiles of your circle: "))
+						circleX = int(input("X: "))
+						circleY = int(input("Y: "))
+						self.DrawObstacleCircle(circleX, circleY, circleRadius)
+						self.clickCount = 3
 
 			self.DrawGrid()
 			
