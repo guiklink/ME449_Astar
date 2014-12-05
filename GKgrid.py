@@ -15,8 +15,7 @@ BLUE = (0, 0, 255)
 
 class TheGrid:
 	def __init__(self, nWidth, nHeight):
-		self.output = None
-		self.costMatrix = None
+		self.outputParents = None
 
 		self.nWidth = nWidth
 		self.nHeight = nHeight
@@ -47,6 +46,12 @@ class TheGrid:
 		self.startPos = None
 		self.goalPos = None
 
+
+		self.theGraph = library.Graph(self.nHeight, self.nWidth)
+		print '\nCreating Cost Graph...'
+		self.theGraph.CreateGraph()
+		print '\nCost Graph created!'
+
 	def WriteOnGrid(self, list, value):
 		for pos in list:
 			self.grid[pos[0]][pos[1]] = value
@@ -61,7 +66,7 @@ class TheGrid:
 			path.append(pathNode)
 		self.WriteOnGrid(path, 2)
 		path.reverse()
-		self.output = parents
+		self.outputParents = parents
 		print '\n\nPATH TO GOAL = ', path
 
 
@@ -114,14 +119,11 @@ class TheGrid:
 				dict.update({str([row, column]):None})
 		return dict
 
-	def A_Star(self, graph):
+	def A_Star(self):
 		print 'Using A* ...'
 
-		print '\nCreating Cost Graph...'
-		costGraph = graph.CreateGraph()
-		print '\nCost Graph created!'
-
-		self.costMatrix = costGraph
+		graph = self.theGraph
+		costGraph = self.theGraph.euclideanGraph
 
 		open = [self.startPos]						# This is a sorted list (cost) of the open positions
 		
@@ -186,8 +188,7 @@ class TheGrid:
 
 	def PlanToGoal(self):
 		print 'Planning to goal ...'
-		theGraph = library.Graph(self.nHeight, self.nWidth)
-		self.A_Star(theGraph)
+		self.A_Star()
 
 
 	def Start(self):
@@ -231,4 +232,4 @@ class TheGrid:
 
 
 if __name__ == '__main__':
-	theGrid = TheGrid(100,100)
+	theGrid = TheGrid(30,30)

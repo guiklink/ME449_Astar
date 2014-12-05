@@ -34,6 +34,8 @@ class Graph:
 		self.dimX = columns
 		self.dimY = rows
 
+		self.euclideanGraph = None
+
 	def RetrieveCoord(self,node):
 		return node / self.dimY, node % self.dimX
 
@@ -55,7 +57,7 @@ class Graph:
 		graph = []
 		for i in range(0,self.dim):
 			graph.append(self.DistanceList(i))
-		return graph
+		self.euclideanGraph = graph
 
 
 class Node:
