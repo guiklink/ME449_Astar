@@ -2,6 +2,8 @@
 
 import numpy as np
 import math
+import matplotlib.pyplot as plt
+from pylab import MultipleLocator
 
 def listFromStrList(str):
 	l = list(str)
@@ -26,6 +28,13 @@ def MatrixOfNodes(rows,columns):
 		counterInit += columns
 		counterFinal += columns
 	return array2D
+
+class ObstacleCircle:
+	def __init__(self, x, y, radio):
+		self.x = x
+		self.y = y
+		self.radio = radio
+		
 
 class Graph:
 	def __init__(self, rows, columns):
@@ -64,3 +73,37 @@ class Node:
 	def __init__(self, node, parent):
 		self.node = node
 		self.parent = parent
+
+def plotRoadMap(rows, columns, circleObstList, pathList):
+
+		plt.axis([0,columns-1,rows-1,0])
+
+		fig = plt.gcf()
+
+		toPlot = plt.subplot(111)
+
+		toPlot.xaxis.set_major_locator(MultipleLocator(columns/20))	# Set grid interval for axis X
+		toPlot.yaxis.set_major_locator(MultipleLocator(rows/20))	# Set grid interval for axis Y
+
+		toPlot.xaxis.grid(True,'major',linewidth=1)			# Plot grids
+		toPlot.yaxis.grid(True,'major',linewidth=1)
+
+		toPlot.yaxis
+
+		xPath = []
+		yPath = []
+
+		for pos in pathList:
+			xPath.append(pos.x + 0.5)		# load all the positions of X in the list to plot
+			yPath.append(pos.y + 0.5)		# load all the positions of Y in the list to plot
+
+		plt.plot(xPath,yPath)				# Plot line blue line
+		plt.plot(xPath, yPath, 'bo', label='Positions')	# Plot circles blue circles
+
+		#print '\n\nPlotting obstacles...'
+		for circle in circleObstList:
+			circle=plt.Circle((circle.y,circle.x),circle.radio,color='#FFA500')
+			fig.gca().add_artist(circle)
+			
+
+		plt.show()	# Plot it

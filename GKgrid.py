@@ -53,7 +53,8 @@ class TheGrid:	#This class hols the main skeleton of the program, it will create
 		print '\nCost Graph created!'
 
 		self.inputCircleRadius = 1
-		self.obstaclesCircles = []										# a list for all circular obstacles
+		self.obstaclesCirclesList = []								# a list for all circular obstacles
+		self.nodesList = []											# a list for the Nodes to be used
 
 	
 	def RestartTiles(self):
@@ -128,9 +129,9 @@ class TheGrid:	#This class hols the main skeleton of the program, it will create
 					list.append([j,i])
 		return list
 
-	def PastCostInit(self):
-		dict = {}
-		for row in range(self.nHeight):
+	def PastCostInit(self):						# Dicts throw an exeption if an unexisting key is querried
+		dict = {}								# initialize a dict with all tiles of the grid with a cost set as None
+		for row in range(self.nHeight):			# A* algorithm checks if the cost is None to give the 1st update
 			for column in range(self.nWidth):
 				dict.update({str([row, column]):None})
 		return dict
@@ -239,7 +240,8 @@ class TheGrid:	#This class hols the main skeleton of the program, it will create
 				print '\nIt is NOT a line!'
 
 
-	def DrawObstacleCircle(self, cCenter, cRadius):
+	def DrawObstacleCircle(self, cCenter, cRadius):		# Use a A* similar technich to select the tiles that must contain the circle
+		self.obstaclesCirclesList.append(library.ObstacleCircle(cCenter[0], cCenter[1], cRadius)) #append the circle in the obstacle list
 		listToDraw = [cCenter]
 		openCircles = [cCenter]
 		closedCircles = []
@@ -249,14 +251,14 @@ class TheGrid:	#This class hols the main skeleton of the program, it will create
 			nbrCirclesList = self.neighborLocations(currentCircle)
 			for nbrCircle in nbrCirclesList:
 				if nbrCircle not in closedCircles:
-					distance = self.theGraph.euclideanGraph[self.theGraph.RetrieveNode(cCenter)][self.theGraph.RetrieveNode(nbrCircle)]
-					if (cRadius >= distance):
+					distance = self.theGraph.euclideanGraph[self.theGraph.RetrieveNode(cCenter)][self.theGraph.RetrieveNode(nbrCircle)]	
+					if (cRadius >= distance):					# in order to be in the circle the euclidean distance to the center must be less or equal than the ratio value
 						listToDraw.append(nbrCircle)
 						openCircles = [nbrCircle] + openCircles
 		self.WriteOnGrid(listToDraw,3)
 
 
-	def Start(self):							# Function to initialize the grid
+	def Start(self):											# Function to initialize the grid
 
 		self.screen = pygame.display.set_mode(self.size)
 
@@ -264,29 +266,31 @@ class TheGrid:	#This class hols the main skeleton of the program, it will create
 		done = False
 
 		self.clock = pygame.time.Clock()
-		# -------- Main Program Loop -----------
+																# -------- Main Program Loop -----------
 		while done == False:
-			for event in pygame.event.get(): # User did something
-				if event.type == pygame.QUIT: # If user clicked close
-					done = True # Flag that we are done so we exit this loop
+			for event in pygame.event.get(): 					# User did something
+				if event.type == pygame.QUIT: 					# If user clicked close
+					done = True 								# Flag that we are done so we exit this loop
 				elif event.type == pygame.MOUSEBUTTONDOWN:
-					# User clicks the mouse. Get the position
+																# User clicks the mouse. Get the position
 					pos = pygame.mouse.get_pos()
-					# Change the x/y screen coordinates to grid coordinates
+																# Change the x/y screen coordinates to grid coordinates
 					column = pos[0] // (self.width + self.margin)
 					row = pos[1] // (self.height + self.margin)
-					# Set that location to zero
-					self.grid[row][column] = self.clickCount
+																# Set that location to zero
+					self.grid[row][column] = self.clickCount	# Update the grid tile with the respective value (1=GOAL | 2=START | 3=OBSTACLES)
 					if self.clickCount <= 2:
 						if self.clickCount == 1:
-							self.startPos = [row,column]
+							self.startPos = [row,column]			# Saves the start position in a class variable
+							self.nodesList.append(self.startPos)	#add to the nodes list
 						elif self.clickCount == 2:
-							self.goalPos = [row,column]
+							self.goalPos = [row,column]				# Saves the goal position in a class variable
+							self.nodesList.append(self.goalPos)		# add to the nodes list
 						self.clickCount += 1
-					elif self.clickCount == 3:
-						self.DrawObstacleCircle([row,column], self.inputCircleRadius)
+					elif self.clickCount == 3:					
+						self.DrawObstacleCircle([row,column], self.inputCircleRadius)	# call a function to draw the obstacle circle
 					print("Click ", pos, "Grid coordinates: ", row, column)
-				elif event.type == pygame.KEYDOWN:
+				elif event.type == pygame.KEYDOWN:				# capture keyboard keys
 					if event.key == pygame.K_SPACE:
 						print 'START'
 						self.PlanToGoal()
@@ -299,6 +303,12 @@ class TheGrid:	#This class hols the main skeleton of the program, it will create
 					if event.key == pygame.K_c:
 						self.inputCircleRadius = int(input("Enter Radius in tiles of your circle: "))
 						self.clickCount = 3
+					if event.key == pygame.K_p:
+						print '\nOpening math plot lib ...'
+						library.plotRoadMap(self.nHeight, self.nWidth, self.obstaclesCirclesList, [])
+					if event.key == pygame.K_q:
+						print '\nClosing  ...'
+						done = True
 
 			self.DrawGrid()
 			
@@ -309,3 +319,4 @@ class TheGrid:	#This class hols the main skeleton of the program, it will create
 
 if __name__ == '__main__':
 	theGrid = TheGrid(40,40)
+	theGrid.Start()
