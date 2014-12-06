@@ -52,6 +52,9 @@ class TheGrid:	#This class hols the main skeleton of the program, it will create
 		self.theGraph.CreateGraph()									# Initialize the enclidean cost graph 
 		print '\nCost Graph created!'
 
+		self.inputCircleRadius = 1
+		self.obstaclesCircles = []										# a list for all circular obstacles
+
 	
 	def RestartTiles(self):
 		self.grid = []
@@ -236,10 +239,21 @@ class TheGrid:	#This class hols the main skeleton of the program, it will create
 				print '\nIt is NOT a line!'
 
 
-	def DrawObstacleCircle(self, x, y, cRadius):
-		self.grid[y][x] = 3
-		nbrList = self.neighborLocations([y,x])
-		self.WriteOnGrid(nbrList,3)
+	def DrawObstacleCircle(self, cCenter, cRadius):
+		listToDraw = [cCenter]
+		openCircles = [cCenter]
+		closedCircles = []
+		while len(openCircles) > 0:
+			currentCircle = openCircles.pop(0)
+			closedCircles.append(currentCircle)
+			nbrCirclesList = self.neighborLocations(currentCircle)
+			for nbrCircle in nbrCirclesList:
+				if nbrCircle not in closedCircles:
+					distance = self.theGraph.euclideanGraph[self.theGraph.RetrieveNode(cCenter)][self.theGraph.RetrieveNode(nbrCircle)]
+					if (cRadius >= distance):
+						listToDraw.append(nbrCircle)
+						openCircles = [nbrCircle] + openCircles
+		self.WriteOnGrid(listToDraw,3)
 
 
 	def Start(self):							# Function to initialize the grid
@@ -269,6 +283,8 @@ class TheGrid:	#This class hols the main skeleton of the program, it will create
 						elif self.clickCount == 2:
 							self.goalPos = [row,column]
 						self.clickCount += 1
+					elif self.clickCount == 3:
+						self.DrawObstacleCircle([row,column], self.inputCircleRadius)
 					print("Click ", pos, "Grid coordinates: ", row, column)
 				elif event.type == pygame.KEYDOWN:
 					if event.key == pygame.K_SPACE:
@@ -281,10 +297,7 @@ class TheGrid:	#This class hols the main skeleton of the program, it will create
 						print 'Select a GOAL position:'
 						self.clickCount = 2
 					if event.key == pygame.K_c:
-						circleRadius = int(input("Enter Radius in tiles of your circle: "))
-						circleX = int(input("X: "))
-						circleY = int(input("Y: "))
-						self.DrawObstacleCircle(circleX, circleY, circleRadius)
+						self.inputCircleRadius = int(input("Enter Radius in tiles of your circle: "))
 						self.clickCount = 3
 
 			self.DrawGrid()
@@ -295,4 +308,4 @@ class TheGrid:	#This class hols the main skeleton of the program, it will create
 
 
 if __name__ == '__main__':
-	theGrid = TheGrid(30,30)
+	theGrid = TheGrid(40,40)
