@@ -5,13 +5,17 @@ import library
 import time
 
 # Define some colors for the tiles
-BLACK = (0, 0, 0)
-WHITE = (255, 255, 255)
-GREEN = (0, 255, 0)
-RED = (255, 0, 0)
-LIGHTRED = (255, 200, 200)
-ORANGE = (255, 128, 0)
-BLUE = (0, 0, 255)
+BLACK = (0, 0, 0)			# Black for the background
+WHITE = (255, 255, 255)		# Empty tile
+GREEN = (0, 255, 0)			# Start
+RED = (255, 0, 0)			# Path
+LIGHTRED = (255, 200, 200)	# Expanded neighbors
+ORANGE = (255, 128, 0)		# Obstacles
+BLUE = (0, 0, 255)			# Current
+PURPLE = (153, 0, 153)		# Nodes
+DARKRED = (152, 0, 0)		# Goal
+
+# 0: Empty | 1: Start | 2: Goal | 3: Obstacle | 4: Explored Nbr | 5: Current | 6: Nodes | 7: Path
 
 class TheGrid:	#This class hols the main skeleton of the program, it will create the pygame grid and call all the necessary functions
 	def __init__(self, nWidth, nHeight): 	# define the dimensions of your grid
@@ -42,7 +46,7 @@ class TheGrid:	#This class hols the main skeleton of the program, it will create
 		# Used to manage how fast the screen updates
 		self.clock = None
 
-		self.clickCount = 3 	# 1 = set START | 2 = set GOAL | 3 = set OBSTACLES
+		self.clickCount = 3 	# 1 = set START | 2 = set GOAL | 3 = set OBSTACLES | 6 = Nodes
 		self.startPos = None	
 		self.goalPos = None
 
@@ -67,6 +71,11 @@ class TheGrid:	#This class hols the main skeleton of the program, it will create
 			for column in range(self.nHeight):
 				self.grid[row].append(0) # Append a cell
 
+	def ClearTmpTiles(self):
+		for row in range(self.nHeight):
+			for column in range(self.nWidth):
+				if self.grid[row][column] in [4,5]:
+					self.grid[row][column] = 0
 
 	def WriteOnGrid(self, list, value):				# Function that receive a list of [i,j] positions and write a value on it
 		for pos in list:
@@ -75,12 +84,15 @@ class TheGrid:	#This class hols the main skeleton of the program, it will create
 	def WritePath(self, parents):					# Function that receive a dict of nodes and its parents and draw sets the values in the grid for final path
 		print '\n\nPARENTS = ',parents
 		pathNode = self.goalPos
-		path = [pathNode]
+		path = []
 
 		while pathNode != self.startPos:		# While not in the START position keep looking for the parent 
 			pathNode = parents[str(pathNode)]	# Build the path list in a reverse way
 			path.append(pathNode)
-		self.WriteOnGrid(path, 2)
+		self.WriteOnGrid(path, 7)
+		self.WriteOnGrid(self.nodesList, 6)
+		self.WriteOnGrid([self.startPos], 1)
+		self.WriteOnGrid([self.goalPos], 2)
 		path.reverse()							# Unreverse the list in order to print it in the right order
 		self.outputParents = parents
 		print '\n\n---------------------- PATH TO GOAL -------------------------------------------------'
@@ -96,16 +108,20 @@ class TheGrid:	#This class hols the main skeleton of the program, it will create
 		for row in range(self.nHeight):			# Depending on the value on the grid fill it with the appropriate color
 			for column in range(self.nWidth):
 				color = WHITE
-				if self.grid[row][column] == 1: # Empty tiles 
+				if self.grid[row][column] == 1: # Start 
 					color = GREEN
 				elif self.grid[row][column] == 2: # Goal 
-					color = RED
+					color = DARKRED
 				elif self.grid[row][column] == 3: # Obstacles
 					color = ORANGE
 				elif self.grid[row][column] == 4: # Explored Tiles
 					color = LIGHTRED
 				elif self.grid[row][column] == 5: # Current tile
 					color = BLUE
+				elif self.grid[row][column] == 6: # Nodes
+					color = PURPLE
+				elif self.grid[row][column] == 7: # Path
+					color = RED
 				pygame.draw.rect(self.screen, color, [(self.margin+self.width)*column+self.margin, (self.margin+self.height)*row+
 					self.margin, self.width, self.height])
 		# Limit to 60 frames per second
@@ -157,7 +173,7 @@ class TheGrid:	#This class hols the main skeleton of the program, it will create
 				print 'PATH FOUND !!!!'
 				open = []				# make open empty to finish the loop
 				self.WritePath(parentDict)
-				return parentDict
+				return parentDict, past_cost[str(current)]
 			else:
 				neighbors = self.neighborLocations(current) # retrieve all the neighbo coords for the current position
 
@@ -230,15 +246,12 @@ class TheGrid:	#This class hols the main skeleton of the program, it will create
 
 	def PlanToGoal(self):						# Function to encapsulate the A* (Computer Scientist habbits never dies!)
 		print 'Planning to goal ...'
-		result = self.A_Star()
+		result, cost = self.A_Star()
 		if len(result) == 0:
 			print '\n\nThere is no path for this goal!!!'
 		else:
-			if self.IsPathStraighLine(result):
-				print '\nIt is a line!'
-			else:
-				print '\nIt is NOT a line!'
-
+			print '\n\nPath Found!!! Cost = ',cost
+		
 
 	def DrawObstacleCircle(self, cCenter, cRadius):		# Use a A* similar technich to select the tiles that must contain the circle
 		self.obstaclesCirclesList.append(library.ObstacleCircle(cCenter[0], cCenter[1], cRadius)) #append the circle in the obstacle list
@@ -289,6 +302,9 @@ class TheGrid:	#This class hols the main skeleton of the program, it will create
 						self.clickCount += 1
 					elif self.clickCount == 3:					
 						self.DrawObstacleCircle([row,column], self.inputCircleRadius)	# call a function to draw the obstacle circle
+					elif self.clickCount == 6:
+						print '\nNew node added.'
+						self.nodesList.append([row,column])
 					print("Click ", pos, "Grid coordinates: ", row, column)
 				elif event.type == pygame.KEYDOWN:				# capture keyboard keys
 					if event.key == pygame.K_SPACE:
@@ -300,7 +316,8 @@ class TheGrid:	#This class hols the main skeleton of the program, it will create
 					if event.key == pygame.K_g:
 						print 'Select a GOAL position:'
 						self.clickCount = 2
-					if event.key == pygame.K_c:
+					if event.key == pygame.K_r:
+						print '\n'
 						self.inputCircleRadius = int(input("Enter Radius in tiles of your circle: "))
 						self.clickCount = 3
 					if event.key == pygame.K_p:
@@ -309,6 +326,15 @@ class TheGrid:	#This class hols the main skeleton of the program, it will create
 					if event.key == pygame.K_q:
 						print '\nClosing  ...'
 						done = True
+					if event.key == pygame.K_n:
+						print '\nClick to add new nodes.'
+						self.clickCount = 6
+					if event.key == pygame.K_o:
+						print '\nReady to add obstacles!!!'
+						self.clickCount = 3
+					if event.key == pygame.K_c:
+						print '\nClearing temp tile colors ...'
+						self.ClearTmpTiles()
 
 			self.DrawGrid()
 			
@@ -318,5 +344,5 @@ class TheGrid:	#This class hols the main skeleton of the program, it will create
 
 
 if __name__ == '__main__':
-	theGrid = TheGrid(40,40)
+	theGrid = TheGrid(20,20)
 	theGrid.Start()
