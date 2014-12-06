@@ -20,6 +20,7 @@ DARKRED = (152, 0, 0)		# Goal
 class TheGrid:	#This class hols the main skeleton of the program, it will create the pygame grid and call all the necessary functions
 	def __init__(self, nWidth, nHeight): 	# define the dimensions of your grid
 		self.outputParents = None			#this variable is used for debugging
+		self.outputNodesPath = None
 
 		self.nWidth = nWidth	
 		self.nHeight = nHeight
@@ -71,22 +72,22 @@ class TheGrid:	#This class hols the main skeleton of the program, it will create
 			for column in range(self.nHeight):
 				self.grid[row].append(0) # Append a cell
 
-	def ClearTmpTiles(self):
+	def ClearTmpTiles(self, clearCells):
 		for row in range(self.nHeight):
 			for column in range(self.nWidth):
-				if self.grid[row][column] in [4,5]:
+				if self.grid[row][column] in clearCells:
 					self.grid[row][column] = 0
 
 	def WriteOnGrid(self, list, value):				# Function that receive a list of [i,j] positions and write a value on it
 		for pos in list:
 			self.grid[pos[0]][pos[1]] = value
 
-	def WritePath(self, parents):					# Function that receive a dict of nodes and its parents and draw sets the values in the grid for final path
+	def WritePath(self, parents, start, goal):		# Function that receive a dict of nodes and its parents and draw sets the values in the grid for final path
 		print '\n\nPARENTS = ',parents
-		pathNode = self.goalPos
+		pathNode = goal
 		path = []
 
-		while pathNode != self.startPos:		# While not in the START position keep looking for the parent 
+		while pathNode != start:		# While not in the START position keep looking for the parent 
 			pathNode = parents[str(pathNode)]	# Build the path list in a reverse way
 			path.append(pathNode)
 		self.WriteOnGrid(path, 7)
@@ -98,6 +99,7 @@ class TheGrid:	#This class hols the main skeleton of the program, it will create
 		print '\n\n---------------------- PATH TO GOAL -------------------------------------------------'
 		print '\n', path
 		print '\n-------------------------------------------------------------------------------------'
+		return path
 
 
 	def DrawGrid(self):	#Function that draw the grid, is called everytime the grid is refreshed or updated
@@ -152,34 +154,41 @@ class TheGrid:	#This class hols the main skeleton of the program, it will create
 				dict.update({str([row, column]):None})
 		return dict
 
-	def A_Star(self):
+	def NodeGraphInit(self):						# Dicts throw an exeption if an unexisting key is querried
+		dict = {}								# initialize the graph dict so when if the path doesnt exist the value None will be granted
+		for n1 in self.nodesList:			
+			for n2 in self.nodesList:
+				dict.update({str(n1)+ '|' +str(n2):None})
+				dict.update({str(n2)+ '|' +str(n1):None})
+		return dict
+
+	def A_Star(self, start, goal):
 		print 'Using A* ...'
 
 		graph = self.theGraph
 		costGraph = self.theGraph.euclideanGraph
 
-		open = [self.startPos]						# This is a sorted list (cost) of the open positions
+		open = [start]						# This is a sorted list (cost) of the open positions
 		
 		past_cost = self.PastCostInit()
-		past_cost.update({str(self.startPos):0})	# This is a dict that has the cost to all nodes openned
+		past_cost.update({str(start):0})			# This is a dict that has the cost to all nodes openned
 		closed = []									# All the nodes that were already expanded (avoid infinite loops)
-		parentDict = {str(self.startPos):None}
+		parentDict = {str(start):None}
 
 		while len(open) > 0:		
 			current = open.pop(0)	# retrieve the first node from the open list (smallest cost so far)
 			closed.append(current)	# add to closed list
 
-			if current == self.goalPos:	# is the current node is the goal finish algorithm
+			if current == goal:			# is the current node is the goal finish algorithm
 				print 'PATH FOUND !!!!'
 				open = []				# make open empty to finish the loop
-				self.WritePath(parentDict)
 				return parentDict, past_cost[str(current)]
 			else:
 				neighbors = self.neighborLocations(current) # retrieve all the neighbo coords for the current position
 
 				print '\nITERATION'					# This prints are used for debugging
-				print 'START = ', self.startPos
-				print 'GOAL = ', self.goalPos
+				print 'START = ', start
+				print 'GOAL = ', goal
 				print 'CURRENT = ', current
 				print 'NEIGHBORS = ',neighbors
 				print 'OPEN = ',open
@@ -195,7 +204,7 @@ class TheGrid:	#This class hols the main skeleton of the program, it will create
 
 						tmp_cost = past_cost[str(current)] + costGraph[graph.RetrieveNode(current)][graph.RetrieveNode(nbr)] 
 						# retrieve the cost spent to the current node and add it to the cost to go to the respective nbr 
-						tmp_cost_heur = tmp_cost + costGraph[graph.RetrieveNode(self.goalPos)][graph.RetrieveNode(nbr)]
+						tmp_cost_heur = tmp_cost + costGraph[graph.RetrieveNode(goal)][graph.RetrieveNode(nbr)]
 						#(RetrieveNode transform a [i,j] based coordinate to its node number so we can retrieve the cost from the Graph)
 				
 						#nbrDict.update({str(nbr):tmp_cost})							# add the cost to go to each nbr to the temp dict
@@ -216,41 +225,40 @@ class TheGrid:	#This class hols the main skeleton of the program, it will create
 				print '---------------------------------------------------------------------------'
 
 			self.DrawGrid()						# Redraw the grid with the new changes
-			time.sleep(0.2)						# Wait for a little bit so the user can see the changes in the grid
+			time.sleep(0.1)						# Wait for a little bit so the user can see the changes in the grid
 
 		return {}
-
-	def IsPathStraighLine(self, parents):
-		x1 = self.startPos[1]
-		y1 = self.startPos[0]
-		x2 = self.goalPos[1]
-		y2 = self.goalPos[0]
-
-		print 'x1 = ',x1
-		print 'y1 = ',y1
-		print 'x2 = ',x2
-		print 'y2 = ',y2
-
-		m = (y2 - y1) / (x2 - x1)
-
-		print '\nLine Equation: y - ',y1,' = ', m, ' * (x - ', x1,')'
-
-		pathNode = self.goalPos
-
-		while pathNode != self.startPos:		# While not in the START position keep looking for the parent 
-			if pathNode[0]-y1!=m*(pathNode[1]-x1):
-				return False
-			pathNode = parents[str(pathNode)]
-		return True	
 			
+	def DrawPathList(self, nodesGraph):
+		listOfPathsAndCosts = nodesGraph.values()		# Extract only the values (paths) of our Dict that holds the graph
+		listOfPaths = []
+		for lPC in listOfPathsAndCosts:					# Remove the costs since we only need the path list
+			listOfPaths.append(lPC.pop(0))
+		for path in listOfPaths:
+			self.WriteOnGrid(path, 7)
+		self.WriteOnGrid(self.nodesList, 6)
+		self.WriteOnGrid([self.startPos], 1)
+		self.WriteOnGrid([self.goalPos], 2)
+
 
 	def PlanToGoal(self):						# Function to encapsulate the A* (Computer Scientist habbits never dies!)
 		print 'Planning to goal ...'
-		result, cost = self.A_Star()
-		if len(result) == 0:
-			print '\n\nThere is no path for this goal!!!'
-		else:
-			print '\n\nPath Found!!! Cost = ',cost
+		resultGraph_Astar = self.NodeGraphInit()
+		for node in self.nodesList:
+			for expNode in self.nodesList:
+				if resultGraph_Astar[str(node)+ '|' +str(expNode)] == None:
+					resultPath, cost = self.A_Star(node, expNode)
+					resultPathList = self.WritePath(resultPath, node, expNode)
+					resultGraph_Astar.update({str(node)+ '|' +str(expNode):[resultPathList, cost]})
+					resultPathList.reverse()
+					resultGraph_Astar.update({str(expNode)+ '|' +str(node):[resultPathList, cost]})
+					if len(resultPath) == 0:
+						print '\n\nThere is NO path between', node,' and ', expNode
+					else:
+						print '\n\nPath FOUND between', node,' and ', expNode
+					self.ClearTmpTiles([4,7])
+		self.DrawPathList(resultGraph_Astar)
+		self.outputNodesPath = resultGraph_Astar
 		
 
 	def DrawObstacleCircle(self, cCenter, cRadius):		# Use a A* similar technich to select the tiles that must contain the circle
@@ -334,7 +342,7 @@ class TheGrid:	#This class hols the main skeleton of the program, it will create
 						self.clickCount = 3
 					if event.key == pygame.K_c:
 						print '\nClearing temp tile colors ...'
-						self.ClearTmpTiles()
+						self.ClearTmpTiles([4,5,7])
 
 			self.DrawGrid()
 			
