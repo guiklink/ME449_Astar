@@ -18,6 +18,12 @@ def listFromStrList(str):
 
 	return coord
 
+def GraphKeyHeader(key):		# retrieves a graph Key = ['point1'|'point2'] and return point1, point2
+	list = key.split('|')
+	point1 = list[0]
+	point2 = list[1]
+	return listFromStrList(point1),listFromStrList(point2)
+
 def MatrixOfNodes(rows,columns):
 	array2D = []
 
@@ -107,3 +113,65 @@ def plotRoadMap(rows, columns, circleObstList, pathList):
 			
 
 		plt.show()	# Plot it
+
+
+def WillItTouchCircle(point1, point2, circle):
+	# compute the euclidean distance between A and B
+
+	Ax = point1[1]
+	Ay = point1[0]
+
+	Bx = point2[1]
+	By = point2[0]
+
+	Cx = circle.x
+	Cy = circle.y
+	R = circle.radio
+
+	print '\nAx=',Ax,' | Ay=',Ay
+	print '\nBx=',Bx,' | By=',By
+	LAB = math.sqrt(math.pow(Bx-Ax,2)+ math.pow(By-Ay,2))
+
+	# compute the direction vector D from A to B
+	Dx = (Bx-Ax)/LAB
+	Dy = (By-Ay)/LAB
+
+	# Now the line equation is x = Dx*t + Ax, y = Dy*t + Ay with 0 <= t <= 1.
+
+	# compute the value t of the closest point to the circle center (Cx, Cy)
+	t = Dx*(Cx-Ax) + Dy*(Cy-Ay)    
+
+	# This is the projection of C on the line from A to B.
+
+	# compute the coordinates of the point E on line and closest to C
+	Ex = t*Dx+Ax
+	Ey = t*Dy+Ay
+
+	# compute the euclidean distance from E to C
+	LEC = math.sqrt( math.pow(Ex-Cx,2)+ math.pow(Ey-Cy,2))
+
+	# test if the line intersects the circle
+	if LEC < R:
+		print '\nTouch the circle.'
+		return True
+	# else test if the line is tangent to circle
+	elif LEC == R:
+		print '\nTouch the circle.'
+		return True
+	else:
+		print '\nDont Touch the circle.'
+		return False
+
+def RemovePathsThatHitObstacles(dictPath, circleList):		#Receive a dict of the shape {Key:[[path],cost]} and delete the paths that hit an obstacle circle
+	newDictPath = dictPath
+	keyList = newDictPath.keys()
+	#print '\nCircle List = ', len(circleList)
+	for pointTuple in keyList:
+		#print '\nKeylist = ',newDictPath.keys()
+		point1, point2 =  GraphKeyHeader(pointTuple)
+		for circle in circleList:
+			if point1 != point2 and WillItTouchCircle(point1,point2,circle):
+				#print '\nis removing ...',point1,' - ', point2
+				del(newDictPath[str(point1) + '|' + str(point2)])
+				break
+	return newDictPath

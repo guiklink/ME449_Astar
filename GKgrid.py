@@ -20,7 +20,7 @@ DARKRED = (152, 0, 0)		# Goal
 class TheGrid:	#This class hols the main skeleton of the program, it will create the pygame grid and call all the necessary functions
 	def __init__(self, nWidth, nHeight): 	# define the dimensions of your grid
 		self.outputParents = None			#this variable is used for debugging
-		self.outputNodesPath = None
+		self.outputNodesGraph = None   		# saves a dict with all paths constructed with the A*
 
 		self.nWidth = nWidth	
 		self.nHeight = nHeight
@@ -83,22 +83,22 @@ class TheGrid:	#This class hols the main skeleton of the program, it will create
 			self.grid[pos[0]][pos[1]] = value
 
 	def WritePath(self, parents, start, goal):		# Function that receive a dict of nodes and its parents and draw sets the values in the grid for final path
-		print '\n\nPARENTS = ',parents
 		pathNode = goal
 		path = []
-
-		while pathNode != start:		# While not in the START position keep looking for the parent 
-			pathNode = parents[str(pathNode)]	# Build the path list in a reverse way
-			path.append(pathNode)
-		self.WriteOnGrid(path, 7)
+		print 'Parents on write = ',parents
+		if len(parents) > 0:
+			while pathNode != start:		# While not in the START position keep looking for the parent 
+				pathNode = parents[str(pathNode)]	# Build the path list in a reverse way
+				path.append(pathNode)
+			self.WriteOnGrid(path, 7)
+			path.reverse()							# Unreverse the list in order to print it in the right order
+			self.outputParents = parents
+			print '\n\n---------------------- PATH TO GOAL -------------------------------------------------'
+			print '\n', path
+			print '\n-------------------------------------------------------------------------------------'
 		self.WriteOnGrid(self.nodesList, 6)
 		self.WriteOnGrid([self.startPos], 1)
 		self.WriteOnGrid([self.goalPos], 2)
-		path.reverse()							# Unreverse the list in order to print it in the right order
-		self.outputParents = parents
-		print '\n\n---------------------- PATH TO GOAL -------------------------------------------------'
-		print '\n', path
-		print '\n-------------------------------------------------------------------------------------'
 		return path
 
 
@@ -186,13 +186,13 @@ class TheGrid:	#This class hols the main skeleton of the program, it will create
 			else:
 				neighbors = self.neighborLocations(current) # retrieve all the neighbo coords for the current position
 
-				print '\nITERATION'					# This prints are used for debugging
-				print 'START = ', start
-				print 'GOAL = ', goal
-				print 'CURRENT = ', current
-				print 'NEIGHBORS = ',neighbors
-				print 'OPEN = ',open
-				print 'CLOSED = ',closed
+				#print '\nITERATION'					# This prints are used for debugging
+				#print 'START = ', start
+				#print 'GOAL = ', goal
+				#print 'CURRENT = ', current
+				#print 'NEIGHBORS = ',neighbors
+				#print 'OPEN = ',open
+				#print 'CLOSED = ',closed
 
 				nbrDict = {}	# init a tmp dict
 				nbrDictHeuristic = {}
@@ -217,23 +217,28 @@ class TheGrid:	#This class hols the main skeleton of the program, it will create
 				nbrCostSortedList = sorted(nbrDictHeuristic,key=nbrDictHeuristic.__getitem__)	# Sort the expanded NBRs by its cost to goal (past cost + heuristic)		
 				# get a list with nbr nodes sorted according its cost 
 				nbrCostSortedList = map(library.listFromStrList, nbrCostSortedList) # convert the elements of the list from a string '[i,j]' to a list [i,j] format
-				print nbrDict   				# More debugging prints !!!!!
-				print nbrCostSortedList
+				#print nbrDict   				# More debugging prints !!!!!
+				#print nbrCostSortedList
 				past_cost.update(nbrDict)		# add the tmp dict to our main dict
 				open = nbrCostSortedList + open	# add a list of sorted nbr according to the travel cost to open
-				print 'NEW OPEN = ', open
-				print '---------------------------------------------------------------------------'
+				#print 'NEW OPEN = ', open
+				#print '---------------------------------------------------------------------------'
 
 			self.DrawGrid()						# Redraw the grid with the new changes
 			time.sleep(0.1)						# Wait for a little bit so the user can see the changes in the grid
 
-		return {}
-			
+		return {},None
+	
+
 	def DrawPathList(self, nodesGraph):
 		listOfPathsAndCosts = nodesGraph.values()		# Extract only the values (paths) of our Dict that holds the graph
 		listOfPaths = []
 		for lPC in listOfPathsAndCosts:					# Remove the costs since we only need the path list
-			listOfPaths.append(lPC.pop(0))
+			if len(lPC) > 1:							# check if lCP has a pass ... nodes doesnt have a path to itself and this shouldnt be pronted although the graph memorizes those entries
+				tmpPath = lPC[0]
+				print '\nGetting ready to draw...'
+				print tmpPath
+				listOfPaths.append(tmpPath)
 		for path in listOfPaths:
 			self.WriteOnGrid(path, 7)
 		self.WriteOnGrid(self.nodesList, 6)
@@ -248,17 +253,19 @@ class TheGrid:	#This class hols the main skeleton of the program, it will create
 			for expNode in self.nodesList:
 				if resultGraph_Astar[str(node)+ '|' +str(expNode)] == None:
 					resultPath, cost = self.A_Star(node, expNode)
-					resultPathList = self.WritePath(resultPath, node, expNode)
+					if len(resultPath) == 0:
+						print '\n\nThere is NO path between', node,' and ', expNode
+						resultPathList = []
+					else:
+						print '\n\nPath FOUND between', node,' and ', expNode
+						resultPathList = self.WritePath(resultPath, node, expNode)
 					resultGraph_Astar.update({str(node)+ '|' +str(expNode):[resultPathList, cost]})
 					resultPathList.reverse()
 					resultGraph_Astar.update({str(expNode)+ '|' +str(node):[resultPathList, cost]})
-					if len(resultPath) == 0:
-						print '\n\nThere is NO path between', node,' and ', expNode
-					else:
-						print '\n\nPath FOUND between', node,' and ', expNode
 					self.ClearTmpTiles([4,7])
+		print '\n\n=> GRAPH:\n',resultGraph_Astar
 		self.DrawPathList(resultGraph_Astar)
-		self.outputNodesPath = resultGraph_Astar
+		self.outputNodesGraph = resultGraph_Astar
 		
 
 	def DrawObstacleCircle(self, cCenter, cRadius):		# Use a A* similar technich to select the tiles that must contain the circle
@@ -343,7 +350,11 @@ class TheGrid:	#This class hols the main skeleton of the program, it will create
 					if event.key == pygame.K_c:
 						print '\nClearing temp tile colors ...'
 						self.ClearTmpTiles([4,5,7])
-
+					if event.key == pygame.K_BACKSPACE:
+						print '\nRemoving non-straight paths ...'
+						self.outputNodesGraph = library.RemovePathsThatHitObstacles(self.outputNodesGraph, self.obstaclesCirclesList)
+						self.ClearTmpTiles([4,5,7])
+						self.DrawPathList(self.outputNodesGraph)
 			self.DrawGrid()
 			
 		# Be IDLE friendly. If you forget this line, the program will 'hang'
