@@ -10,8 +10,17 @@ theListCircles = None			# list of all the circular obstacles
 NO_PATH = -1 					# if there s no path between nodes this value is assigned
 
 
-def Plot(listNodes, listCircles, graph):
-	gk.plotRoadMap(100,100,listNodes,listCircles, graph)
+def Plot(listNodes, listCircles, graph, start, goal, pathTree):
+	path = []
+	if pathTree != None:
+		node = goal
+		path = [goal]
+		while pathTree[node] != None:
+			node = pathTree[node]
+			path = [node] + path
+	print '\nSolution Path: ',path
+
+	gk.plotRoadMap(100,100,listNodes,listCircles, graph, start, goal,path)
 
 def getEuclideanDist(n1, n2):	# returns the euclidean distance between 2 nodes
 	return math.sqrt(math.pow(n2[1]-n1[1],2) + math.pow(n2[0]-n1[0],2))
@@ -65,7 +74,7 @@ def willItTouchCircle(point1, point2, circle):
 
 	print '\nAx=',Ax,' | Ay=',Ay
 	print '\nBx=',Bx,' | By=',By
-	LAB = math.sqrt(math.pow(Bx-Ax,2)+ math.pow(By-Ay,2))
+	LAB = getEuclideanDist(point1,point2)
 
 	# compute the direction vector D from A to B
 	Dx = (Bx-Ax)/LAB
@@ -108,20 +117,59 @@ def removeEdgesTouchingCircle(listNodes, graph, listCircles):
 					tmpGraph[i][j] = NO_PATH
 	return tmpGraph
 
-def touchCircle():
-	pass
+def getNeighbors(nodeN, graph):
+	nbrs = []
 
+	for i in range(len(graph[nodeN])):
+		if nodeN != i and graph[nodeN][i] >= 0:
+			nbrs.append(i)
+	return nbrs
 
-def isStraightLine():
-	pass
+def A_Star(graph, listNodes, start, goal):
+	#startNode = listNodes[start]
+	#goalNode = listNodes[goal]
 
+	open = [start]
+	past_cost = {start:0}
+	closed = []
+	parent = {start:None}
 
-def A_Star():
-	pass
+	current = None
+
+	while len(open) > 0:
+		current = open.pop(0)
+
+		print '\nCURRENT = ',current
+		print 'OPEN = ', open
+		print 'CLOSED = ', closed
+
+		if current not in closed:
+			closed.append(current)
+			if current == goal:
+				print '\nA* Path Found'
+				return parent, past_cost[current]
+			else:
+				nbrs = getNeighbors(current,graph)
+
+				heuristicDict = {}
+				for nbr in nbrs:
+					tmpCost = past_cost[current] + graph[current][nbr]
+					heuristicCost = tmpCost + getEuclideanDist(listNodes[current],listNodes[nbr])
+					heuristicDict.update({nbr:heuristicCost})
+
+					if nbr not in past_cost.keys() or tmpCost < past_cost[nbr]:
+						past_cost.update({nbr:tmpCost})
+						parent.update({nbr:current})
+
+				# Sort the neighbors by its heuristic cost and insert it into the open list
+				sortedNbrsList = sorted(heuristicDict,key=heuristicDict.__getitem__)
+				open = open + sortedNbrsList
+	print '\nA* Path NOT Found'
+	return {}, -1 
 
 
 def Main(nodeGraph, start, goal, circleList, robotRadius):
-	pass
+	pass 
 
 
 def Init():
