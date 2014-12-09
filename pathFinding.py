@@ -62,34 +62,54 @@ def removeNodesInCircle(listOfNodes, listOfCircles, graph):	# is a node is insid
 
 def willItTouchCircle(point1, point2, circle):
 	# compute the euclidean distance between A and B
-	Ax = point1[1]
-	Ay = point1[0]
+	Ax = float(point1[1])
+	Ay = float(point1[0])
 
-	Bx = point2[1]
-	By = point2[0]
+	Bx = float(point2[1])
+	By = float(point2[0])
 
-	Cx = circle.column
-	Cy = circle.row
-	Cr = circle.radio
+	Cx = float(circle.column)
+	Cy = float(circle.row)
+	Cr = float(circle.radio)
 
-	m = By - Ay / Bx - Ax
+	print '\nNode\npoint1 ', point1
+	print 'point2 ', point2
 
-	mInv = -1/m
+	if Ay != By or Ax != Bx:
+		m = (By - Ay) / (Bx - Ax)
+		print 'By = ',By
+		print 'Ay = ',Ay
+		print 'Bx = ',Bx
+		print 'Ax = ',Ax
+		print 'M = ',m
+		mInv = -1/m
 
-	b1 = Ay - m * Ax
-	b2 = Cy - mInv * Cx
+		b1 = Ay - m * Ax
+		b2 = Cy - mInv * Cx
 
-	Ix = (b2 - b1) / (m - mInv)
-	Iy = m * Ix + b1
+		Ix = (b2 - b1) / (m - mInv)
+		Iy = m * Ix + b1
+	elif Ay == By:
+		Ix = Cx
+		Iy = Ay
+	elif Ax == Bx:
+		Ix = Ax
+		Iy = Cy
 
 	distItoC = getEuclideanDist([Ix,Iy],[Cx,Cy])
+	dist1to2 = getEuclideanDist(point2,point1)
+	dist1toC = getEuclideanDist([Cy,Cx],point1)
+	dist2toC = getEuclideanDist([Cy,Cx],point2)
 
-	if distItoC <= Cr:
+
+	if distItoC <= Cr and (dist1to2 > dist1toC and dist1to2 > dist2toC) :
 		print '\nTouch CIRCLE!'
 		return True
 	else:
 		print '\nDo NOT Touch CIRCLE!'
 		return False
+	
+
 
 def removeEdgesTouchingCircle(listNodes, graph, listCircles):
 	global NO_PATH
@@ -136,7 +156,7 @@ def A_Star(graph, listNodes, start, goal):
 				heuristicDict = {}
 				for nbr in nbrs:
 					tmpCost = past_cost[current] + graph[current][nbr]
-					heuristicCost = tmpCost + getEuclideanDist(listNodes[current],listNodes[nbr])
+					heuristicCost = tmpCost #+ getEuclideanDist(listNodes[current],listNodes[nbr])
 					heuristicDict.update({nbr:heuristicCost})
 
 					if nbr not in past_cost.keys() or tmpCost < past_cost[nbr]:
@@ -150,8 +170,31 @@ def A_Star(graph, listNodes, start, goal):
 	return {}, -1 
 
 
-def Main(nodeGraph, start, goal, circleList, robotRadius):
-	pass 
+def Main(start, goal, robotRadius):
+	global theGraphOfNodes, theListCircles, theListOfNodes
+
+	# Show the map
+	Plot(theListOfNodes,theListCircles,None,start,goal,None)
+
+	# Show map with all connections
+	Plot(theListOfNodes,theListCircles,theGraphOfNodes,start,goal,None)
+
+	# Remove nodes inside circles 
+	theGraphOfNodes = removeNodesInCircle(theListOfNodes, theListCircles,theGraphOfNodes)
+
+	Plot(theListOfNodes,theListCircles,theGraphOfNodes,start,goal,None)
+
+	# Remove the edges touching circles
+	theGraphOfNodes = removeEdgesTouchingCircle(theListOfNodes, theGraphOfNodes, theListCircles)
+
+	Plot(theListOfNodes,theListCircles,theGraphOfNodes,start,goal,None)
+
+	# Execute A* storing the parent tree and the cost to goal
+	parentTree,cost = A_Star(theGraphOfNodes, theListOfNodes, start, goal)
+
+	print '\n\n=> The path COST is: ', cost
+	# Plot solution path 
+	Plot(theListOfNodes,theListCircles,theGraphOfNodes,start,goal,parentTree)
 
 
 def Init():
@@ -176,9 +219,6 @@ def Init():
 	c4 = gk.ObstacleCircle(72,75,13)
 	c5 = gk.ObstacleCircle(90,73,10)
 	theListCircles = [c0,c1,c2,c3,c4,c5]
-
-
-	
 
 
 if __name__ == '__main__':
