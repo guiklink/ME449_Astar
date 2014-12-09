@@ -70,40 +70,25 @@ def willItTouchCircle(point1, point2, circle):
 
 	Cx = circle.column
 	Cy = circle.row
-	R = circle.radio 
+	Cr = circle.radio
 
-	print '\nAx=',Ax,' | Ay=',Ay
-	print '\nBx=',Bx,' | By=',By
-	LAB = getEuclideanDist(point1,point2)
+	m = By - Ay / Bx - Ax
 
-	# compute the direction vector D from A to B
-	Dx = (Bx-Ax)/LAB
-	Dy = (By-Ay)/LAB
+	mInv = -1/m
 
-	# Now the line equation is x = Dx*t + Ax, y = Dy*t + Ay with 0 <= t <= 1.
+	b1 = Ay - m * Ax
+	b2 = Cy - mInv * Cx
 
-	# compute the value t of the closest point to the circle center (Cx, Cy)
-	t = Dx*(Cx-Ax) + Dy*(Cy-Ay)    
+	Ix = (b2 - b1) / (m - mInv)
+	Iy = m * Ix + b1
 
-	# This is the projection of C on the line from A to B.
+	distItoC = getEuclideanDist([Ix,Iy],[Cx,Cy])
 
-	# compute the coordinates of the point E on line and closest to C
-	Ex = t*Dx+Ax
-	Ey = t*Dy+Ay
-
-	# compute the euclidean distance from E to C
-	LEC = math.sqrt( math.pow(Ex-Cx,2)+ math.pow(Ey-Cy,2))
-
-	# test if the line intersects the circle
-	if LEC < R:
-		print '\nTouch the circle.'
-		return True
-	# else test if the line is tangent to circle
-	elif LEC == R:
-		print '\nTouch the circle.'
+	if distItoC <= Cr:
+		print '\nTouch CIRCLE!'
 		return True
 	else:
-		print '\nDont Touch the circle.'
+		print '\nDo NOT Touch CIRCLE!'
 		return False
 
 def removeEdgesTouchingCircle(listNodes, graph, listCircles):
@@ -121,14 +106,11 @@ def getNeighbors(nodeN, graph):
 	nbrs = []
 
 	for i in range(len(graph[nodeN])):
-		if nodeN != i and graph[nodeN][i] >= 0:
+		if nodeN != i and graph[nodeN][i] >= 0:	# if the cost is negatice it means theres no possible path, so its not a nbr
 			nbrs.append(i)
 	return nbrs
 
 def A_Star(graph, listNodes, start, goal):
-	#startNode = listNodes[start]
-	#goalNode = listNodes[goal]
-
 	open = [start]
 	past_cost = {start:0}
 	closed = []
@@ -163,7 +145,7 @@ def A_Star(graph, listNodes, start, goal):
 
 				# Sort the neighbors by its heuristic cost and insert it into the open list
 				sortedNbrsList = sorted(heuristicDict,key=heuristicDict.__getitem__)
-				open = open + sortedNbrsList
+				open = sortedNbrsList + open 	#CHANGED
 	print '\nA* Path NOT Found'
 	return {}, -1 
 
@@ -184,7 +166,7 @@ def Init():
 	n6 = [89,55]
 	n7 = [91,90]
 	n8 = [75,69]
-	theListOfNodes = [n0,n1,n2,n3,n4,n5,n6,n7,n8]	# List of the coordinates of all nodes
+	theListOfNodes = [n0,n1,n2,n3,n4,n5,n6,n7,n8]		# List of the coordinates of all nodes (ORDER MATTER)
 	theGraphOfNodes = create2DGraph(theListOfNodes)		# 2D Array that is the cost graph between nodes can be custom initialized
 
 	c0 = gk.ObstacleCircle(10,69,12)
