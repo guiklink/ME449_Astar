@@ -172,61 +172,65 @@ class TheGrid:	#This class hols the main skeleton of the program, it will create
 		
 		past_cost = self.PastCostInit()
 		past_cost.update({str(start):0})			# This is a dict that has the cost to all nodes openned
-		closed = []									# All the nodes that were already expanded (avoid infinite loops)
+		closed = []							# All the nodes that were already expanded (avoid infinite loops)
 		parentDict = {str(start):None}
+		current = None
 
-		while len(open) > 0:		
+		while len(open) > 0:
 			current = open.pop(0)	# retrieve the first node from the open list (smallest cost so far)
-			closed.append(current)	# add to closed list
-
-			if current == goal:			# is the current node is the goal finish algorithm
-				print 'PATH FOUND !!!!'
-				open = []				# make open empty to finish the loop
-				return parentDict, past_cost[str(current)]
-			else:
-				neighbors = self.neighborLocations(current) # retrieve all the neighbo coords for the current position
-
-				#print '\nITERATION'					# This prints are used for debugging
-				#print 'START = ', start
-				#print 'GOAL = ', goal
-				#print 'CURRENT = ', current
-				#print 'NEIGHBORS = ',neighbors
-				#print 'OPEN = ',open
-				#print 'CLOSED = ',closed
-
-				nbrDict = {}	# init a tmp dict
-				nbrDictHeuristic = {}
-				for nbr in neighbors:
-					if nbr not in closed:	# for all nbr that werent annalyzed
-
-						self.WriteOnGrid([nbr], 4) # mark the explored nodes in the grid
-						self.WriteOnGrid([current], 5) # mark the explored nodes in the grid
-
-						tmp_cost = past_cost[str(current)] + costGraph[graph.RetrieveNode(current)][graph.RetrieveNode(nbr)] 
-						# retrieve the cost spent to the current node and add it to the cost to go to the respective nbr 
-						tmp_cost_heur = tmp_cost + costGraph[graph.RetrieveNode(goal)][graph.RetrieveNode(nbr)]
-						#(RetrieveNode transform a [i,j] based coordinate to its node number so we can retrieve the cost from the Graph)
+			if current not in closed:		
 				
-						#nbrDict.update({str(nbr):tmp_cost})							# add the cost to go to each nbr to the temp dict
-						nbrDictHeuristic.update({str(nbr):tmp_cost_heur})
+					
+				closed.append(current)	# add to closed list
 
-					if  (past_cost[str(nbr)] == None) or (tmp_cost < past_cost[str(nbr)]): # Check if we already know the cost for this NBR or if we got a better cost then before 
-							past_cost.update({str(nbr):tmp_cost})		# Update the cost to this NBR
-							parentDict.update({str(nbr):current})		# The CURRENT will be the new parent for NBR
+				if current == goal:			# is the current node is the goal finish algorithm
+					print '\nA*: PATH FOUND !!!!'
+					open = []				# make open empty to finish the loop
+					return parentDict, past_cost[str(current)]
+				else:
+					neighbors = self.neighborLocations(current) # retrieve all the neighbo coords for the current position
 
-				nbrCostSortedList = sorted(nbrDictHeuristic,key=nbrDictHeuristic.__getitem__)	# Sort the expanded NBRs by its cost to goal (past cost + heuristic)		
-				# get a list with nbr nodes sorted according its cost 
-				nbrCostSortedList = map(library.listFromStrList, nbrCostSortedList) # convert the elements of the list from a string '[i,j]' to a list [i,j] format
-				#print nbrDict   				# More debugging prints !!!!!
-				#print nbrCostSortedList
-				past_cost.update(nbrDict)		# add the tmp dict to our main dict
-				open = nbrCostSortedList + open	# add a list of sorted nbr according to the travel cost to open
-				#print 'NEW OPEN = ', open
-				#print '---------------------------------------------------------------------------'
+					print '\nITERATION'					# This prints are used for debugging
+					print 'START = ', start
+					print 'GOAL = ', goal
+					print 'CURRENT = ', current
+					print 'NEIGHBORS = ',neighbors
+					print 'OPEN = ',open
+					print 'CLOSED = ',closed
 
-			self.DrawGrid()						# Redraw the grid with the new changes
-			time.sleep(0.1)						# Wait for a little bit so the user can see the changes in the grid
+					nbrDict = {}	# init a tmp dict
+					nbrDictHeuristic = {}
+					for nbr in neighbors:
+						if nbr not in closed:	# for all nbr that werent annalyzed
 
+							self.WriteOnGrid([nbr], 4) # mark the explored nodes in the grid
+							self.WriteOnGrid([current], 5) # mark the explored nodes in the grid
+
+							tmp_cost = past_cost[str(current)] + costGraph[graph.RetrieveNode(current)][graph.RetrieveNode(nbr)] 
+							# retrieve the cost spent to the current node and add it to the cost to go to the respective nbr 
+							tmp_cost_heur = tmp_cost + costGraph[graph.RetrieveNode(goal)][graph.RetrieveNode(nbr)]
+							#(RetrieveNode transform a [i,j] based coordinate to its node number so we can retrieve the cost from the Graph)
+					
+							#nbrDict.update({str(nbr):tmp_cost})							# add the cost to go to each nbr to the temp dict
+							nbrDictHeuristic.update({str(nbr):tmp_cost_heur})
+
+						if  (past_cost[str(nbr)] == None) or (tmp_cost < past_cost[str(nbr)]): # Check if we already know the cost for this NBR or if we got a better cost then before 
+								past_cost.update({str(nbr):tmp_cost})		# Update the cost to this NBR
+								parentDict.update({str(nbr):current})		# The CURRENT will be the new parent for NBR
+
+					nbrCostSortedList = sorted(nbrDictHeuristic,key=nbrDictHeuristic.__getitem__)	# Sort the expanded NBRs by its cost to goal (past cost + heuristic)		
+					# get a list with nbr nodes sorted according its cost 
+					nbrCostSortedList = map(library.listFromStrList, nbrCostSortedList) # convert the elements of the list from a string '[i,j]' to a list [i,j] format
+					#print nbrDict   				# More debugging prints !!!!!
+					#print nbrCostSortedList
+					past_cost.update(nbrDict)		# add the tmp dict to our main dict
+					open = nbrCostSortedList + open	# add a list of sorted nbr according to the travel cost to open
+					#print 'NEW OPEN = ', open
+					print '---------------------------------------------------------------------------'
+
+				self.DrawGrid()						# Redraw the grid with the new changes
+				time.sleep(0.1)						# Wait for a little bit so the user can see the changes in the grid
+		print '\n A*: Path not found!!!'
 		return {},None
 	
 
@@ -236,8 +240,6 @@ class TheGrid:	#This class hols the main skeleton of the program, it will create
 		for lPC in listOfPathsAndCosts:					# Remove the costs since we only need the path list
 			if len(lPC) > 1:							# check if lCP has a pass ... nodes doesnt have a path to itself and this shouldnt be pronted although the graph memorizes those entries
 				tmpPath = lPC[0]
-				print '\nGetting ready to draw...'
-				print tmpPath
 				listOfPaths.append(tmpPath)
 		for path in listOfPaths:
 			self.WriteOnGrid(path, 7)
@@ -262,7 +264,7 @@ class TheGrid:	#This class hols the main skeleton of the program, it will create
 					resultGraph_Astar.update({str(node)+ '|' +str(expNode):[resultPathList, cost]})
 					resultPathList.reverse()
 					resultGraph_Astar.update({str(expNode)+ '|' +str(node):[resultPathList, cost]})
-					self.ClearTmpTiles([4,7])
+					self.ClearTmpTiles([4,5,7])
 		print '\n\n=> GRAPH:\n',resultGraph_Astar
 		self.DrawPathList(resultGraph_Astar)
 		self.outputNodesGraph = resultGraph_Astar
@@ -283,6 +285,10 @@ class TheGrid:	#This class hols the main skeleton of the program, it will create
 					if (cRadius >= distance):					# in order to be in the circle the euclidean distance to the center must be less or equal than the ratio value
 						listToDraw.append(nbrCircle)
 						openCircles = [nbrCircle] + openCircles
+
+		for node in self.nodesList:
+			listToDraw = [x for x in listToDraw if x!=node]		# make sure we dont draw an obstacle on a node
+
 		self.WriteOnGrid(listToDraw,3)
 
 
