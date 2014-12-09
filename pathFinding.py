@@ -131,7 +131,7 @@ def getNeighbors(nodeN, graph):
 	return nbrs
 
 def A_Star(graph, listNodes, start, goal):
-	open = [start]
+	open = {start:9999999}
 	past_cost = {start:0}
 	closed = []
 	parent = {start:None}
@@ -139,7 +139,11 @@ def A_Star(graph, listNodes, start, goal):
 	current = None
 
 	while len(open) > 0:
-		current = open.pop(0)
+		# Sort nodes by heuristic cost before retrieving it
+		sortedOpenList = sorted(open,key=open.__getitem__)
+		current = sortedOpenList[0]
+
+		del(open[current])
 
 		print '\nCURRENT = ',current
 		print 'OPEN = ', open
@@ -164,8 +168,7 @@ def A_Star(graph, listNodes, start, goal):
 						parent.update({nbr:current})
 
 				# Sort the neighbors by its heuristic cost and insert it into the open list
-				sortedNbrsList = sorted(heuristicDict,key=heuristicDict.__getitem__)
-				open = sortedNbrsList + open 	#CHANGED
+				open.update(heuristicDict)
 	print '\nA* Path NOT Found'
 	return {}, -1 
 
