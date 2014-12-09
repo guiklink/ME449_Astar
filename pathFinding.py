@@ -10,8 +10,8 @@ theListCircles = None			# list of all the circular obstacles
 NO_PATH = -1 					# if there s no path between nodes this value is assigned
 
 
-def Plot(listNodes, listCircles):
-	gk.plotRoadMap(100,100,listNodes,listCircles)
+def Plot(listNodes, listCircles, graph):
+	gk.plotRoadMap(100,100,listNodes,listCircles, graph)
 
 def getEuclideanDist(n1, n2):	# returns the euclidean distance between 2 nodes
 	return math.sqrt(math.pow(n2[1]-n1[1],2) + math.pow(n2[0]-n1[0],2))
@@ -49,6 +49,63 @@ def removeNodesInCircle(listOfNodes, listOfCircles, graph):	# is a node is insid
 			tmpGraph[index] = invalidLine				# raplace row
 			for i in range(nRows):
 				tmpGraph[i][index] = NO_PATH			# update the whole column with invalid values
+	return tmpGraph
+
+def willItTouchCircle(point1, point2, circle):
+	# compute the euclidean distance between A and B
+	Ax = point1[1]
+	Ay = point1[0]
+
+	Bx = point2[1]
+	By = point2[0]
+
+	Cx = circle.column
+	Cy = circle.row
+	R = circle.radio 
+
+	print '\nAx=',Ax,' | Ay=',Ay
+	print '\nBx=',Bx,' | By=',By
+	LAB = math.sqrt(math.pow(Bx-Ax,2)+ math.pow(By-Ay,2))
+
+	# compute the direction vector D from A to B
+	Dx = (Bx-Ax)/LAB
+	Dy = (By-Ay)/LAB
+
+	# Now the line equation is x = Dx*t + Ax, y = Dy*t + Ay with 0 <= t <= 1.
+
+	# compute the value t of the closest point to the circle center (Cx, Cy)
+	t = Dx*(Cx-Ax) + Dy*(Cy-Ay)    
+
+	# This is the projection of C on the line from A to B.
+
+	# compute the coordinates of the point E on line and closest to C
+	Ex = t*Dx+Ax
+	Ey = t*Dy+Ay
+
+	# compute the euclidean distance from E to C
+	LEC = math.sqrt( math.pow(Ex-Cx,2)+ math.pow(Ey-Cy,2))
+
+	# test if the line intersects the circle
+	if LEC < R:
+		print '\nTouch the circle.'
+		return True
+	# else test if the line is tangent to circle
+	elif LEC == R:
+		print '\nTouch the circle.'
+		return True
+	else:
+		print '\nDont Touch the circle.'
+		return False
+
+def removeEdgesTouchingCircle(listNodes, graph, listCircles):
+	global NO_PATH
+	tmpGraph = graph
+
+	for i in range(len(listNodes)):
+		for j in range(len(listNodes)):
+			for circle in listCircles:
+				if listNodes[i] != listNodes[j] and willItTouchCircle(listNodes[i],listNodes[j],circle):
+					tmpGraph[i][j] = NO_PATH
 	return tmpGraph
 
 def touchCircle():

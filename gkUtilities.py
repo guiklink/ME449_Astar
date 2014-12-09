@@ -32,7 +32,7 @@ def GraphKeyHeader(key):		# retrieves a graph Key = ['point1'|'point2'] and retu
 	return listFromStrList(point1),listFromStrList(point2)
 
 
-def plotRoadMap(rows, columns, listOfNodes,circleObstList):
+def plotRoadMap(rows, columns, listOfNodes,circleObstList,graph):
 
 		plt.axis([0,columns-1,rows-1,0])
 
@@ -47,15 +47,26 @@ def plotRoadMap(rows, columns, listOfNodes,circleObstList):
 		toPlot.yaxis.grid(True,'major',linewidth=1)
 
 
-		
-
 		for node in listOfNodes:
 			xPath = []
 			yPath = []
-			xPath.append(node[1] + 0.5)		# load all the positions of X in the list to plot
-			yPath.append(node[0] + 0.5)		# load all the positions of Y in the list to plot
+			xPath.append(node[1])		# load all the positions of X in the list to plot
+			yPath.append(node[0])		# load all the positions of Y in the list to plot
 			#plt.plot(xPath,yPath)				# Plot line blue line
-			plt.plot(xPath, yPath, 'bo', label='Positions')	# Plot circles blue circles
+			plt.plot(xPath, yPath, 'ro', label='Positions')	# Plot red dots
+
+
+		# Plot the edges between nodes
+		if graph != None:
+			for i in range(len(listOfNodes)):
+				for j in range(len(listOfNodes)):
+					if graph[i][j] > 0:
+						xPath = []
+						yPath = []
+						xPath = [listOfNodes[i][1],listOfNodes[j][1]]	# load all the positions of X in the list to plot
+						yPath = [listOfNodes[i][0],listOfNodes[j][0]]	# load all the positions of Y in the list to plot
+						plt.plot(xPath,yPath, 'b')								# Plot line blue line
+
 
 		#Plot the obstacle circles
 		for circle in circleObstList:
@@ -75,9 +86,9 @@ def WillItTouchCircle(point1, point2, circle):
 	Bx = point2[1]
 	By = point2[0]
 
-	Cx = circle.x
-	Cy = circle.y
-	R = circle.radio + 1 
+	Cx = circle.column
+	Cy = circle.row
+	R = circle.radio 
 
 	print '\nAx=',Ax,' | Ay=',Ay
 	print '\nBx=',Bx,' | By=',By
@@ -104,14 +115,14 @@ def WillItTouchCircle(point1, point2, circle):
 	# test if the line intersects the circle
 	if LEC < R:
 		print '\nTouch the circle.'
-		return False
+		return True
 	# else test if the line is tangent to circle
 	elif LEC == R:
 		print '\nTouch the circle.'
-		return False
+		return True
 	else:
 		print '\nDont Touch the circle.'
-		return True
+		return False
 
 def RemovePathsThatHitObstacles(dictPath, circleList):		#Receive a dict of the shape {Key:[[path],cost]} and delete the paths that hit an obstacle circle
 	newDictPath = dictPath
