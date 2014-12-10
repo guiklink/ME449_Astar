@@ -37,15 +37,15 @@ def create2DGraph(listNodes):	#returns a 2D array that has the costs between the
 	return graph
 
 
-def isNodeInAnyCircle(node, listOfCircles):	# detects if a node is inside of any circle in the list of circles
+def isNodeInAnyCircle(node, listOfCircles, robotRadius):	# detects if a node is inside of any circle in the list of circles
 	for c in listOfCircles:
 		eucDist = getEuclideanDist(node,[c.row, c.column])
-		if eucDist <= c.radio:				# if the euclidean distance is less than a radius of a circle it is touching it
+		print 'circle'
+		if (eucDist - robotRadius) <= c.radio:				# if the euclidean distance is less than a radius of a circle it is touching it
 			return True
-	else:
-		return False
+	return False
 
-def removeNodesInCircle(listOfNodes, listOfCircles, graph):	# is a node is inside a circle make all the costs from it and to it  equals the NO_PATH value
+def removeNodesInCircle(listOfNodes, listOfCircles, graph, robotRadius):	# is a node is inside a circle make all the costs from it and to it  equals the NO_PATH value
 	global NO_PATH					# variable with the cost for an invalid edge
 
 	tmpGraph = graph 				# store the graph into a manipulable temp variable
@@ -53,23 +53,24 @@ def removeNodesInCircle(listOfNodes, listOfCircles, graph):	# is a node is insid
 	nColumn = len(tmpGraph[0]) 		# number of columns
 
 	for index in range(len(listOfNodes)):
-		if isNodeInAnyCircle(listOfNodes[index], listOfCircles):
+		print '\nRemoving ', listOfNodes[index]
+		if isNodeInAnyCircle(listOfNodes[index], listOfCircles,robotRadius):
 			invalidLine = [NO_PATH] * nColumn		# creates a new row of invalid values
 			tmpGraph[index] = invalidLine				# raplace row
 			for i in range(nRows):
 				tmpGraph[i][index] = NO_PATH			# update the whole column with invalid values
 	return tmpGraph
 
-def willItTouchCircle(point1, point2, circle):
-	Ax = float(point1[1])		# Coordinates for point A
+def willItTouchCircle(point1, point2, circle,robotRadius):
+	Ax = float(point1[1])					# Coordinates for point A
 	Ay = float(point1[0])
 
-	Bx = float(point2[1])		# Coordinates for point B
+	Bx = float(point2[1])					# Coordinates for point B
 	By = float(point2[0])
 
-	Cx = float(circle.column)	# Coordinates for circle center
+	Cx = float(circle.column)				# Coordinates for circle center
 	Cy = float(circle.row)
-	Cr = float(circle.radio)	# Circle radius
+	Cr = float(circle.radio) + robotRadius	# Circle radius
 
 	print '\nNode\npoint1 ', point1
 	print 'point2 ', point2
@@ -101,7 +102,7 @@ def willItTouchCircle(point1, point2, circle):
 	dist2toC = getEuclideanDist([Cy,Cx],point2) 	# distance point 2 to circle center
 
 
-	if distItoC <= Cr and (dist1to2 > dist1toC or dist1to2 > dist2toC) : # !!! use some trigonometric triangulations
+	if distItoC <= Cr and dist1to2 > dist1toC and dist1to2 > dist2toC : # !!! use some trigonometric triangulations
 		print '\nTouch CIRCLE!'
 		return True
 	else:
@@ -110,14 +111,14 @@ def willItTouchCircle(point1, point2, circle):
 	
 
 
-def removeEdgesTouchingCircle(listNodes, graph, listCircles): # this function will use willItTouchCircle to set NO_PATH values for the edges that touch an obstacle
+def removeEdgesTouchingCircle(listNodes, graph, listCircles,robotRadius): # this function will use willItTouchCircle to set NO_PATH values for the edges that touch an obstacle
 	global NO_PATH
 	tmpGraph = graph
 
 	for i in range(len(listNodes)): # iterate to compare each node with each other from the list
 		for j in range(len(listNodes)):
 			for circle in listCircles:
-				if listNodes[i] != listNodes[j] and willItTouchCircle(listNodes[i],listNodes[j],circle): # if the nodes are not the same and the straight line between then touch an obstacle remove edge
+				if listNodes[i] != listNodes[j] and willItTouchCircle(listNodes[i],listNodes[j],circle,robotRadius): # if the nodes are not the same and the straight line between then touch an obstacle remove edge
 					tmpGraph[i][j] = NO_PATH
 	return tmpGraph
 
@@ -182,12 +183,12 @@ def Main(start, goal, robotRadius): 		# Main function works as a script
 	Plot(theListOfNodes,theListCircles,theGraphOfNodes,start,goal,None)
 
 	# Remove nodes inside circles 
-	theGraphOfNodes = removeNodesInCircle(theListOfNodes, theListCircles,theGraphOfNodes)
+	theGraphOfNodes = removeNodesInCircle(theListOfNodes, theListCircles,theGraphOfNodes,robotRadius)
 
 	Plot(theListOfNodes,theListCircles,theGraphOfNodes,start,goal,None)
 
 	# Remove the edges touching circles
-	theGraphOfNodes = removeEdgesTouchingCircle(theListOfNodes, theGraphOfNodes, theListCircles)
+	theGraphOfNodes = removeEdgesTouchingCircle(theListOfNodes, theGraphOfNodes, theListCircles,robotRadius)
 
 	Plot(theListOfNodes,theListCircles,theGraphOfNodes,start,goal,None)
 
@@ -195,8 +196,14 @@ def Main(start, goal, robotRadius): 		# Main function works as a script
 	parentTree,cost = A_Star(theGraphOfNodes, theListOfNodes, start, goal)
 
 	print '\n\n=> The path COST is: ', cost
-	# Plot solution path 
-	Plot(theListOfNodes,theListCircles,theGraphOfNodes,start,goal,parentTree)
+
+	if cost == -1:
+		print '\n----------------------------------'
+		print '| IS NOT POSSIBLE TO FIND A PATH |'
+		print '----------------------------------\n'
+	else:
+		# Plot solution path 
+		Plot(theListOfNodes,theListCircles,theGraphOfNodes,start,goal,parentTree)
 
 
 def Init(): 											# initialize values to be used by my A*
