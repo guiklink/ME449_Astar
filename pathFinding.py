@@ -40,7 +40,6 @@ def create2DGraph(listNodes):	#returns a 2D array that has the costs between the
 def isNodeInAnyCircle(node, listOfCircles, robotRadius):	# detects if a node is inside of any circle in the list of circles
 	for c in listOfCircles:
 		eucDist = getEuclideanDist(node,[c.row, c.column])
-		print 'circle'
 		if (eucDist - robotRadius) <= c.radio:				# if the euclidean distance is less than a radius of a circle it is touching it
 			return True
 	return False
@@ -53,7 +52,6 @@ def removeNodesInCircle(listOfNodes, listOfCircles, graph, robotRadius):	# is a 
 	nColumn = len(tmpGraph[0]) 		# number of columns
 
 	for index in range(len(listOfNodes)):
-		print '\nRemoving ', listOfNodes[index]
 		if isNodeInAnyCircle(listOfNodes[index], listOfCircles,robotRadius):
 			invalidLine = [NO_PATH] * nColumn		# creates a new row of invalid values
 			tmpGraph[index] = invalidLine				# raplace row
