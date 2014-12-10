@@ -5,7 +5,7 @@ import math
 import matplotlib.pyplot as plt
 from pylab import MultipleLocator
 
-class ObstacleCircle:
+class ObstacleCircle: 						# data structure for circle
 	def __init__(self, row, column, radio):
 		self.row = row
 		self.column = column
