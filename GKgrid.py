@@ -328,10 +328,10 @@ class TheGrid:	#This class hols the main skeleton of the program, it will create
 						self.nodesList.append([row,column])
 					print("Click ", pos, "Grid coordinates: ", row, column)
 				elif event.type == pygame.KEYDOWN:				# capture keyboard keys
-					if event.key == pygame.K_SPACE:
+					if event.key == pygame.K_SPACE:				#
 						print 'START'
 						self.PlanToGoal()
-					if event.key == pygame.K_s:
+					if event.key == pygame.K_s:					# S: to select start position
 						print 'Select a START position:'
 						self.clickCount = 1
 					if event.key == pygame.K_g:
@@ -369,5 +369,5 @@ class TheGrid:	#This class hols the main skeleton of the program, it will create
 
 
 if __name__ == '__main__':
-	theGrid = TheGrid(20,20)
+	theGrid = TheGrid(30,30)
 	theGrid.Start()

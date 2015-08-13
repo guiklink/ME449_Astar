@@ -5,6 +5,9 @@ import math
 import matplotlib.pyplot as plt
 from pylab import MultipleLocator
 
+def getEuclideanDist(n1, n2):	# returns the euclidean distance between 2 nodes
+	return math.sqrt(math.pow(n2[1]-n1[1],2) + math.pow(n2[0]-n1[0],2))
+
 def listFromStrList(str):
 	l = list(str)
 	l = filter(lambda a: a != ' ', l)
@@ -115,52 +118,53 @@ def plotRoadMap(rows, columns, circleObstList, pathList):
 		plt.show()	# Plot it
 
 
-def WillItTouchCircle(point1, point2, circle):
-	# compute the euclidean distance between A and B
+def WillItTouchCircle(point1, point2, circle,robotRadius):
+	Ax = float(point1[1])					# Coordinates for point A
+	Ay = float(point1[0])
 
-	Ax = point1[1]
-	Ay = point1[0]
+	Bx = float(point2[1])					# Coordinates for point B
+	By = float(point2[0])
 
-	Bx = point2[1]
-	By = point2[0]
+	Cx = float(circle.x)				# Coordinates for circle center
+	Cy = float(circle.y)
+	Cr = float(circle.radio) + robotRadius	# Circle radius
 
-	Cx = circle.x
-	Cy = circle.y
-	R = circle.radio + 1 
+	print '\nNode\npoint1 ', point1
+	print 'point2 ', point2
 
-	print '\nAx=',Ax,' | Ay=',Ay
-	print '\nBx=',Bx,' | By=',By
-	LAB = math.sqrt(math.pow(Bx-Ax,2)+ math.pow(By-Ay,2))
+	if Ay != By and Ax != Bx:		# for the case when m (slope) is not 0
+		m = (By - Ay) / (Bx - Ax)	# calculate m
+		print 'By = ',By
+		print 'Ay = ',Ay
+		print 'Bx = ',Bx
+		print 'Ax = ',Ax
+		print 'M = ',m
+		mInv = -1/m 				# slope of the orthogonal line
 
-	# compute the direction vector D from A to B
-	Dx = (Bx-Ax)/LAB
-	Dy = (By-Ay)/LAB
+		b1 = Ay - m * Ax 			# points of the ortogonal
+		b2 = Cy - mInv * Cx			
 
-	# Now the line equation is x = Dx*t + Ax, y = Dy*t + Ay with 0 <= t <= 1.
+		Ix = (b2 - b1) / (m - mInv) # calculate points in the intersection 
+		Iy = m * Ix + b1
+	elif Ay == By: 					# for the cases where the lines share a coordinate
+		Ix = Cx
+		Iy = Ay
+	elif Ax == Bx:
+		Ix = Ax
+		Iy = Cy
 
-	# compute the value t of the closest point to the circle center (Cx, Cy)
-	t = Dx*(Cx-Ax) + Dy*(Cy-Ay)    
+	distItoC = getEuclideanDist([Ix,Iy],[Cx,Cy]) 	# distance intersection to circle center 
+	dist1to2 = getEuclideanDist(point2,point1)		# distance from point 1 to 2
+	dist1toC = getEuclideanDist([Cy,Cx],point1)		# distance point 1 to circle center
+	dist2toC = getEuclideanDist([Cy,Cx],point2) 	# distance point 2 to circle center
 
-	# This is the projection of C on the line from A to B.
 
-	# compute the coordinates of the point E on line and closest to C
-	Ex = t*Dx+Ax
-	Ey = t*Dy+Ay
-
-	# compute the euclidean distance from E to C
-	LEC = math.sqrt( math.pow(Ex-Cx,2)+ math.pow(Ey-Cy,2))
-
-	# test if the line intersects the circle
-	if LEC < R:
-		print '\nTouch the circle.'
-		return False
-	# else test if the line is tangent to circle
-	elif LEC == R:
-		print '\nTouch the circle.'
-		return False
-	else:
-		print '\nDont Touch the circle.'
+	if distItoC <= Cr and dist1to2 > dist1toC and dist1to2 > dist2toC : # !!! use some trigonometric triangulations
+		print '\nTouch CIRCLE!'
 		return True
+	else:
+		print '\nDo NOT Touch CIRCLE!'
+		return False
 
 def RemovePathsThatHitObstacles(dictPath, circleList):		#Receive a dict of the shape {Key:[[path],cost]} and delete the paths that hit an obstacle circle
 	newDictPath = dictPath
@@ -170,7 +174,7 @@ def RemovePathsThatHitObstacles(dictPath, circleList):		#Receive a dict of the s
 		#print '\nKeylist = ',newDictPath.keys()
 		point1, point2 =  GraphKeyHeader(pointTuple)
 		for circle in circleList:
-			if point1 != point2 and WillItTouchCircle(point1,point2,circle):
+			if point1 != point2 and WillItTouchCircle(point1,point2,circle,0):
 				#print '\nis removing ...',point1,' - ', point2
 				del(newDictPath[str(point1) + '|' + str(point2)])
 				break
