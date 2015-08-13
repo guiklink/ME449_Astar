@@ -328,35 +328,35 @@ class TheGrid:	#This class hols the main skeleton of the program, it will create
 						self.nodesList.append([row,column])
 					print("Click ", pos, "Grid coordinates: ", row, column)
 				elif event.type == pygame.KEYDOWN:				# capture keyboard keys
-					if event.key == pygame.K_SPACE:				#
+					if event.key == pygame.K_SPACE:				# SPACE: Start calculating the path
 						print 'START'
 						self.PlanToGoal()
 					if event.key == pygame.K_s:					# S: to select start position
 						print 'Select a START position:'
 						self.clickCount = 1
-					if event.key == pygame.K_g:
+					if event.key == pygame.K_g:					# G: to select the Goal position
 						print 'Select a GOAL position:'
 						self.clickCount = 2
-					if event.key == pygame.K_r:
+					if event.key == pygame.K_r:					# R: to select obstacle radius
 						print '\n'
 						self.inputCircleRadius = int(input("Enter Radius in tiles of your circle: "))
 						self.clickCount = 3
-					if event.key == pygame.K_p:
+					if event.key == pygame.K_p:					# P: to plot with mathplotlib
 						print '\nOpening math plot lib ...'
 						library.plotRoadMap(self.nHeight, self.nWidth, self.obstaclesCirclesList, [])
-					if event.key == pygame.K_q:
+					if event.key == pygame.K_q:					# Q: to close the program
 						print '\nClosing  ...'
 						done = True
 					if event.key == pygame.K_n:
-						print '\nClick to add new nodes.'
+						print '\nClick to add new nodes.'		# N: to insert nodes
 						self.clickCount = 6
-					if event.key == pygame.K_o:
+					if event.key == pygame.K_o:					# O: to insert obstacles
 						print '\nReady to add obstacles!!!'
 						self.clickCount = 3
-					if event.key == pygame.K_c:
+					if event.key == pygame.K_c:					# C: clear temp colors
 						print '\nClearing temp tile colors ...'
 						self.ClearTmpTiles([4,5,7])
-					if event.key == pygame.K_BACKSPACE:
+					if event.key == pygame.K_BACKSPACE:			# K: Remove non-straigh paths
 						print '\nRemoving non-straight paths ...'
 						self.outputNodesGraph = library.RemovePathsThatHitObstacles(self.outputNodesGraph, self.obstaclesCirclesList)
 						self.ClearTmpTiles([4,5,7])
