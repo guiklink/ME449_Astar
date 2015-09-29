@@ -269,7 +269,7 @@ class TheGrid:	#This class hols the main skeleton of the program, it will create
 		self.DrawPathList(resultGraph_Astar)
 		self.outputNodesGraph = resultGraph_Astar
 		
-
+####################################### Discontinued #######################################################################################################################
 	def DrawObstacleCircle(self, cCenter, cRadius):		# Use a A* similar technich to select the tiles that must contain the circle
 		self.obstaclesCirclesList.append(library.ObstacleCircle(cCenter[0], cCenter[1], cRadius)) #append the circle in the obstacle list
 		listToDraw = [cCenter]
@@ -290,6 +290,24 @@ class TheGrid:	#This class hols the main skeleton of the program, it will create
 			listToDraw = [x for x in listToDraw if x!=node]		# make sure we dont draw an obstacle on a node
 
 		self.WriteOnGrid(listToDraw,3)
+#############################################################################################################################################################################
+
+	def DrawObstacleBox(self, bCenter, sSize):		# Function to draw obstacle boxes
+		sX = bCenter[0]
+		sY = bCenter[1]
+		squareTiles = [];
+		print sX
+		print sY
+
+		print range(sX - sSize, sX + sSize + 1)
+		print range(sY - sSize, sY + sSize + 1)
+		for i in range(sX - sSize, sX + sSize + 1):
+			for j in range(sY - sSize, sY + sSize + 1):
+				if(i >= 0 and i < self.nWidth and j >= 0 and j < self.nHeight):
+					squareTiles.append([i,j])
+		print "Printing square tiles: " + str(sSize)
+		print squareTiles
+		self.WriteOnGrid(squareTiles, 3);
 
 
 	def Start(self):											# Function to initialize the grid
@@ -322,7 +340,8 @@ class TheGrid:	#This class hols the main skeleton of the program, it will create
 							self.nodesList.append(self.goalPos)		# add to the nodes list
 						self.clickCount += 1
 					elif self.clickCount == 3:					
-						self.DrawObstacleCircle([row,column], self.inputCircleRadius)	# call a function to draw the obstacle circle
+						#self.DrawObstacleCircle([row,column], self.inputCircleRadius)	# call a function to draw the obstacle circle
+						self.DrawObstacleBox([row,column], self.inputCircleRadius)	# call a function to draw the obstacle box
 					elif self.clickCount == 6:
 						print '\nNew node added.'
 						self.nodesList.append([row,column])
